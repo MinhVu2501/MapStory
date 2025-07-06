@@ -1,12 +1,8 @@
-// src/api/middleware/auth.js
-const { validateUser } = require('../../../users'); // Path to your users.js in the root folder
+const { validateUser } = require('../../../users'); 
 
-/**
- * Middleware to check if a user is authenticated via a JWT.
- * Attaches the user object to req.user if valid.
- */
+
 const authRequired = async (req, res, next) => {
-  const authHeader = req.headers.authorization; // Expects "Bearer TOKEN"
+  const authHeader = req.headers.authorization; 
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).send({
@@ -25,11 +21,11 @@ const authRequired = async (req, res, next) => {
         message: 'Invalid or expired token.'
       });
     }
-    req.user = user; // Attach the authenticated user to the request
+    req.user = user;
     next();
   } catch (error) {
     console.error('Authentication Middleware Error:', error);
-    // Be careful not to expose sensitive error details in production
+    
     res.status(401).send({
       name: error.name || 'AuthenticationError',
       message: error.message || 'Authentication failed.'

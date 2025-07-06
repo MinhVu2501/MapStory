@@ -1,44 +1,40 @@
-// src/api/maps.js
 const express = require('express');
-const mapsRouter = express.Router(); // This creates an Express Router
+const mapsRouter = express.Router();
 const {
   createMap,
   fetchMaps,
   getMapById,
   updateMap,
   deleteMap
-} = require('../db/maps'); // Path to your src/db/maps.js
-const { authRequired } = require('./middleware/auth'); // Path to your auth middleware
+} = require('../db/maps'); 
+const { authRequired } = require('./middleware/auth'); 
 
-// GET /api/maps (fetch all public maps, no auth needed)
+
 mapsRouter.get('/', async (req, res, next) => {
   try {
-    const maps = await fetchMaps(); // fetches public maps by default
+    const maps = await fetchMaps(); 
     res.send(maps);
   } catch (error) {
     next(error);
   }
 });
 
-// GET /api/maps/my-maps (fetch maps for authenticated user)
-// This route requires authentication
 mapsRouter.get('/my-maps', authRequired, async (req, res, next) => {
     try {
-        // req.user is set by authRequired middleware
-        const userMaps = await fetchMaps(req.user.id); // pass user ID to fetch their maps
+     
+        const userMaps = await fetchMaps(req.user.id);
         res.send(userMaps);
     } catch (error) {
         next(error);
     }
 });
 
-// GET /api/maps/:id (fetch a single map by ID)
+
 mapsRouter.get('/:id', async (req, res, next) => {
   try {
     const map = await getMapById(req.params.id);
     if (map) {
-      // If map is private, ensure authenticated user is the owner
-      // req.user might not exist if authRequired middleware wasn't used for this GET route
+  
       if (!map.is_public && (!req.user || req.user.id !== map.user_id)) {
         return res.status(403).send({ message: 'Access denied to private map.' });
       }
@@ -51,7 +47,6 @@ mapsRouter.get('/:id', async (req, res, next) => {
   }
 });
 
-// POST /api/maps (create a new map, requires authentication)
 mapsRouter.post('/', authRequired, async (req, res, next) => {
   try {
     const { title, description, isPublic, centerLat, centerLng, zoomLevel, thumbnailUrl } = req.body;
@@ -59,7 +54,7 @@ mapsRouter.post('/', authRequired, async (req, res, next) => {
         return res.status(400).send({ message: 'Title, center coordinates, and zoom level are required to create a map.' });
     }
     const newMap = await createMap({
-      userId: req.user.id, // Associate with the authenticated user
+      userId: req.user.id,
       title,
       description,
       isPublic,
@@ -74,7 +69,6 @@ mapsRouter.post('/', authRequired, async (req, res, next) => {
   }
 });
 
-// PUT /api/maps/:id (update a map, requires authentication and ownership)
 mapsRouter.put('/:id', authRequired, async (req, res, next) => {
   try {
     const mapId = req.params.id;
@@ -85,7 +79,7 @@ mapsRouter.put('/:id', authRequired, async (req, res, next) => {
       return res.status(404).send({ message: 'Map not found.' });
     }
 
-    // Ensure authenticated user owns the map
+
     if (existingMap.user_id !== req.user.id) {
       return res.status(403).send({ message: 'You are not authorized to update this map.' });
     }
@@ -97,7 +91,7 @@ mapsRouter.put('/:id', authRequired, async (req, res, next) => {
   }
 });
 
-// DELETE /api/maps/:id (delete a map, requires authentication and ownership)
+
 mapsRouter.delete('/:id', authRequired, async (req, res, next) => {
   try {
     const mapId = req.params.id;
@@ -107,7 +101,6 @@ mapsRouter.delete('/:id', authRequired, async (req, res, next) => {
       return res.status(404).send({ message: 'Map not found.' });
     }
 
-    // Ensure authenticated user owns the map
     if (existingMap.user_id !== req.user.id) {
       return res.status(403).send({ message: 'You are not authorized to delete this map.' });
     }
