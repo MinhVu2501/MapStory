@@ -1,4 +1,4 @@
-const client = require('./client'); 
+const client = require('../../client'); 
 const createMap = async ({ userId, title, description, isPublic = true, centerLat, centerLng, zoomLevel, thumbnailUrl }) => {
   try {
     const { rows } = await client.query(`

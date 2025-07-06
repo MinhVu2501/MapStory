@@ -13,7 +13,7 @@ const {
   fetchMaps,    
   getMapById,   
   updateMap,       
-} = require('./maps');
+} = require('./src/db/maps');
 
 const {
   createMarker,
@@ -21,7 +21,7 @@ const {
   getMarkerById, 
   updateMarker,  
   deleteMarker  
-} = require('./markers');
+} = require('./src/db/markers');
 
 const dropTables = async () => {
   try {

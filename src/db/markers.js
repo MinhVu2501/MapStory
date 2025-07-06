@@ -1,4 +1,4 @@
-const client = require('./client'); 
+const client = require('../../client'); 
 
 const createMarker = async ({ mapId, name, description, latitude, longitude, imageUrl, orderIndex = 0 }) => {
   try {
