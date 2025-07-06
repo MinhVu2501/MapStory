@@ -12,9 +12,16 @@ const {
   createMap,
   fetchMaps,    
   getMapById,   
-  updateMap,   
-  deleteMap    
+  updateMap,       
 } = require('./maps');
+
+const {
+  createMarker,
+  fetchMarkers,  
+  getMarkerById, 
+  updateMarker,  
+  deleteMarker  
+} = require('./markers');
 
 const dropTables = async () => {
   try {
@@ -103,6 +110,7 @@ const createTables = async () => {
 
 let user1, user2, user3;
 let map1, map2, map3;
+let marker1_map1; 
 
 const seedData = async () => {
   console.log('Creating dummy users...');
@@ -166,6 +174,77 @@ const seedData = async () => {
   console.log('  Map1:', map1.title, map1.id);
   console.log('  Map2:', map2.title, map2.id);
   console.log('  Map3:', map3.title, map3.id);
+
+  console.log('\nCreating dummy markers...');
+  // Markers for map1 (Da Lat)
+  marker1_map1 = await createMarker({ // Store this marker for demos
+    mapId: map1.id,
+    name: 'Xuan Huong Lake',
+    description: 'The iconic lake at the heart of Da Lat. Great for a morning stroll.',
+    latitude: 11.9416,
+    longitude: 108.4428,
+    imageUrl: 'https://example.com/xuanhuonglake.jpg',
+    orderIndex: 1
+  });
+  await createMarker({
+    mapId: map1.id,
+    name: 'Dalat Railway Station',
+    description: 'A beautiful old train station, a popular spot for photos.',
+    latitude: 11.9427,
+    longitude: 108.4554,
+    imageUrl: 'https://example.com/railwaystation.jpg',
+    orderIndex: 2
+  });
+  await createMarker({
+    mapId: map1.id,
+    name: 'Linh Phuoc Pagoda',
+    description: 'Unique pagoda made of broken pottery and glass.',
+    latitude: 11.9392,
+    longitude: 108.5029,
+    imageUrl: 'https://example.com/linhphuoc.jpg',
+    orderIndex: 3
+  });
+
+  // Markers for map2 (Hanoi)
+  await createMarker({
+    mapId: map2.id,
+    name: 'Hoan Kiem Lake',
+    description: 'The spiritual and geographical heart of Hanoi.',
+    latitude: 21.0287,
+    longitude: 105.8524,
+    imageUrl: 'https://example.com/hoankiem.jpg',
+    orderIndex: 1
+  });
+  await createMarker({
+    mapId: map2.id,
+    name: 'Temple of Literature',
+    description: 'Vietnam\'s first national university.',
+    latitude: 21.0278,
+    longitude: 105.8342,
+    imageUrl: 'https://example.com/templeoflit.jpg',
+    orderIndex: 2
+  });
+
+  // Markers for map3 (Saigon)
+  await createMarker({
+    mapId: map3.id,
+    name: 'Ben Thanh Market',
+    description: 'A bustling market with a variety of goods and street food.',
+    latitude: 10.7725,
+    longitude: 106.6993,
+    imageUrl: 'https://example.com/benthanh.jpg',
+    orderIndex: 1
+  });
+  await createMarker({
+    mapId: map3.id,
+    name: 'Bui Vien Street',
+    description: 'The famous backpacker street, lively at night.',
+    latitude: 10.7675,
+    longitude: 106.6925,
+    imageUrl: 'https://example.com/buivien.jpg',
+    orderIndex: 2
+  });
+  console.log('Markers created!');
 };
 const syncAndSeed = async () => {
   console.log('Starting database synchronization and seeding...');
@@ -251,6 +330,50 @@ const syncAndSeed = async () => {
     }
 
     console.log('\n--- End of Map Function Demonstration ---');
+
+    console.log('\n--- Demonstrating Marker Functions ---');
+
+
+    if (map1 && map1.id) {
+        console.log(`\nFetching markers for map: ${map1.title} (ID: ${map1.id})...`);
+        const map1Markers = await fetchMarkers(map1.id);
+        console.log(`Markers for ${map1.title} (count: ${map1Markers.length}):`);
+        map1Markers.forEach(marker => {
+            console.log(`  - ${marker.name} (Lat: ${marker.latitude}, Lng: ${marker.longitude})`);
+        });
+    } else {
+        console.log('Skipping fetchMarkers as map1 data is not available.');
+    }
+
+
+    if (marker1_map1 && marker1_map1.id) {
+        console.log(`\nFetching marker by ID: ${marker1_map1.id} (${marker1_map1.name})...`);
+        const fetchedMarkerById = await getMarkerById(marker1_map1.id);
+        console.log('Marker fetched by ID:', fetchedMarkerById.name, 'Description:', fetchedMarkerById.description);
+    } else {
+        console.log('Skipping getMarkerById as marker1_map1 data is not available.');
+    }
+
+    if (marker1_map1 && marker1_map1.id) {
+        console.log(`\nUpdating marker: ${marker1_map1.name} (ID: ${marker1_map1.id})...`);
+        const updatedMarker = await updateMarker(marker1_map1.id, {
+            name: 'Xuan Huong Lake (Updated Name)',
+            description: 'The scenic heart of Da Lat, perfect for a peaceful walk around the lake.'
+        });
+        console.log('Marker updated:', updatedMarker.name, 'Description:', updatedMarker.description);
+
+        console.log(`Verifying update for marker: ${updatedMarker.name}...`);
+        const verifiedMarker = await getMarkerById(updatedMarker.id);
+        console.log('Verified Marker Name:', verifiedMarker.name, 'Verified Description:', verifiedMarker.description);
+    } else {
+        console.log('Skipping updateMarker as marker1_map1 data is not available.');
+    }
+
+    
+
+    console.log('\n--- End of Marker Function Demonstration ---');
+
+
 
     console.log('Database synchronization and seeding complete!');
 
