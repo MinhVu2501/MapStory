@@ -1,4 +1,13 @@
-const client = require('./client.js');
+const client = require('./client'); 
+
+const {
+  createUser,
+  loginUser,
+  validateUser,
+  fetchUsers,
+  getUserById
+} = require('./users'); 
+
 
 const dropTables = async () => {
   try {
@@ -11,7 +20,7 @@ const dropTables = async () => {
     console.log('Tables dropped successfully!');
   } catch (error) {
     console.error('Error dropping tables:', error);
-    throw error; 
+    throw error;
   }
 };
 
@@ -85,24 +94,80 @@ const createTables = async () => {
   }
 };
 
+let user1, user2, user3;
+
+const seedData = async () => {
+  console.log('Creating dummy users...');
+  user1 = await createUser({
+    email: 'user1@example.com',
+    username: 'traveler_sam',
+    password: 'password123',
+    subscription_plan: 'premium'
+  });
+  user2 = await createUser({
+    email: 'user2@example.com',
+    username: 'history_buff',
+    password: 'securepass',
+    subscription_plan: 'free'
+  });
+  user3 = await createUser({
+    email: 'user3@example.com',
+    username: 'foodie_ana',
+    password: 'mypassword',
+    subscription_plan: 'free'
+  });
+  console.log('Users created!');
+  console.log('  User1:', user1.username, user1.id);
+  console.log('  User2:', user2.username, user2.id);
+  console.log('  User3:', user3.username, user3.id);
+};
 const syncAndSeed = async () => {
+  console.log('Starting database synchronization and seeding...');
   try {
     console.log('Connecting to client...');
-    await client.connect();
+    await client.connect(); 
     console.log('Connected!');
 
-    console.log('Dropping tables...');
     await dropTables();
-    console.log('Dropped!');
-
-    console.log('Generating tables...');
     await createTables();
-    console.log('Generated!');
+    await seedData(); 
+    console.log('\n--- Demonstrating User Functions ---');
+
+    console.log('\nAttempting to log in traveler_sam...');
+    const loginResult = await loginUser('traveler_sam', 'password123');
+    console.log('Login successful! Token:', loginResult.token ? '[GENERATED]' : '[FAILED]', 'User:', loginResult.user.username);
+    const userToken = loginResult.token;
+
+    if (userToken) {
+      console.log('\nValidating user token...');
+      const validatedUser = await validateUser(userToken);
+      console.log('Token validated! User from token:', validatedUser.username, 'ID:', validatedUser.id);
+    } else {
+      console.log('Skipping token validation as no token was generated.');
+    }
+
+    if (user1 && user1.id) {
+        console.log('\nFetching user1 by ID...');
+        const fetchedUserById = await getUserById(user1.id);
+        console.log('User fetched by ID:', fetchedUserById.username, 'Email:', fetchedUserById.email);
+    } else {
+        console.log('Skipping getUserById as user1 data is not available.');
+    }
+
+    console.log('\nFetching all users...');
+    const allUsers = await fetchUsers();
+    console.log('All users fetched (count:', allUsers.length, '):');
+    allUsers.forEach(user => {
+      console.log(`  - ${user.username} (${user.email}) - Plan: ${user.subscription_plan}`);
+    });
+
+    console.log('\n--- End of User Function Demonstration ---');
+    console.log('Database synchronization and seeding complete!');
 
   } catch (error) {
-    console.error('Error in syncAndSeed:', error);
+    console.error('Database synchronization and seeding failed:', error);
   } finally {
-    await client.end();
+    await client.end(); 
     console.log('Disconnected from DB');
   }
 };
