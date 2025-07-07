@@ -51,6 +51,9 @@ const Navbar = () => {
         <li>
           <Link to="/explore">🔍 Explore</Link>
         </li>
+        <li>
+          <Link to="/routes">🗺️ Routes</Link>
+        </li>
         {user && (
           <li>
             <Link to="/my-maps">🗺️ My Maps</Link>
