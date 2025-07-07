@@ -8,6 +8,7 @@ const CommunityLibrary = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [selectedMap, setSelectedMap] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   const categories = [
     { id: 'all', name: 'All', icon: '🌍' },
@@ -55,6 +56,53 @@ const CommunityLibrary = () => {
   const closeMapModal = () => {
     setShowMapModal(false);
     setSelectedMap(null);
+  };
+
+  const handleLikeMap = async (mapId) => {
+    if (isLiking) return;
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to like maps!');
+      return;
+    }
+    
+    setIsLiking(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/maps/${mapId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to like map');
+      }
+      
+      const data = await response.json();
+      
+      // Update the selected map in modal
+      if (selectedMap && selectedMap.id === mapId) {
+        setSelectedMap({ ...selectedMap, likes: data.likes });
+      }
+      
+      // Update the map in the maps list
+      setMaps(prevMaps => 
+        prevMaps.map(map => 
+          map.id === mapId ? { ...map, likes: data.likes } : map
+        )
+      );
+      
+    } catch (err) {
+      console.error('Error liking map:', err);
+      alert(err.message || 'Failed to like map');
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const filteredMaps = maps.filter(map => 
@@ -279,8 +327,12 @@ const CommunityLibrary = () => {
                   <a href={`/map/${selectedMap.id}`} className="view-full-btn">
                     🗺️ View Full Map
                   </a>
-                  <button className="like-btn">
-                    ❤️ Like This Map
+                  <button 
+                    className="like-btn"
+                    onClick={() => handleLikeMap(selectedMap.id)}
+                    disabled={isLiking}
+                  >
+                    {isLiking ? '⏳ Liking...' : '❤️ Like This Map'}
                   </button>
                   <button className="share-btn">
                     📤 Share

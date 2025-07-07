@@ -7,9 +7,12 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.js",
+    "start": "NODE_ENV=production node server.js",
     "start:dev": "nodemon server.js",
-    "seed:dev": "node ./seed.js"
+    "seed:dev": "node ./seed.js",
+    "seed:prod": "NODE_ENV=production node ./seed.js",
+    "deploy": "npm run build && npm run start",
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",
@@ -51,5 +54,9 @@
   "bugs": {
     "url": "https://github.com/MinhVu2501/MapStory/issues"
   },
-  "homepage": "https://github.com/MinhVu2501/MapStory#readme"
+  "homepage": "https://github.com/MinhVu2501/MapStory#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
 }

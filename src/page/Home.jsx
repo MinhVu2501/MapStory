@@ -1,7 +1,7 @@
 // mapstory/src/pages/Home.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
+import { loadGoogleMaps } from '../utils/googleMapsLoader';
 import MapCreationForm from './MapCreationForm'; // <--- IMPORT THE MAP CREATION FORM
 
 const Home = () => {
@@ -38,28 +38,32 @@ const Home = () => {
 
   // Landing page state
   const [showLandingPage, setShowLandingPage] = useState(true);
+  
+  // Like functionality
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
-    const initMap = async () => {
-      try {
-        setLoading(true);
-        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-        console.log('API Key loaded:', apiKey ? 'Yes' : 'No');
-        console.log('API Key value:', apiKey);
+    // Only initialize map when not showing landing page
+    if (!showLandingPage) {
+      const initMap = async () => {
+        try {
+          setLoading(true);
+          const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          console.log('API Key loaded:', apiKey ? 'Yes' : 'No');
+          console.log('API Key value:', apiKey);
 
-        if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
-          throw new Error('Google Maps API key is not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file.');
-        }
+          if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
+            throw new Error('Google Maps API key is not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file.');
+          }
 
-        const loader = new Loader({
-          apiKey: apiKey,
-          version: 'weekly',
-          libraries: ['places', 'geocoding', 'drawing', 'geometry'],
-          region: 'US',
-          language: 'en'
-        });
+          if (!mapRef.current) {
+            console.error('Map container element not found');
+            setError('Map container not available');
+            setLoading(false);
+            return;
+          }
 
-        const google = await loader.load();
+          const google = await loadGoogleMaps();
 
         const mapInstance = new google.maps.Map(mapRef.current, {
           center: { lat: 21.0285, lng: 105.8542 }, // Hanoi, Vietnam
@@ -199,13 +203,14 @@ const Home = () => {
       }
     };
 
-    initMap();
+      initMap();
 
-    return () => {
-      activeMarkers.forEach(marker => marker.setMap(null));
-      drawnShapes.forEach(shape => shape.setMap(null));
-    };
-  }, []);
+      return () => {
+        activeMarkers.forEach(marker => marker.setMap(null));
+        drawnShapes.forEach(shape => shape.setMap(null));
+      };
+    }
+  }, [showLandingPage]);
 
   const handlePlaceSelect = (autocomplete, mapInstance, google) => {
           activeMarkers.forEach(marker => marker.setMap(null));
@@ -446,27 +451,57 @@ const Home = () => {
     setShowLandingPage(false);
   };
 
+  const handleLikeStory = async (storyId) => {
+    if (isLiking) return;
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to like maps!');
+      return;
+    }
+    
+    setIsLiking(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/maps/${storyId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to like story');
+      }
+      
+      const data = await response.json();
+      
+      // Update the selected story in modal
+      if (selectedStory && selectedStory.id === storyId) {
+        setSelectedStory({ ...selectedStory, likes: data.likes });
+      }
+      
+      // Update the story in the stories list
+      setPublicStories(prevStories => 
+        prevStories.map(story => 
+          story.id === storyId ? { ...story, likes: data.likes } : story
+        )
+      );
+      
+    } catch (err) {
+      console.error('Error liking story:', err);
+      alert(err.message || 'Failed to like story');
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
   if (showLandingPage) {
     return (
       <div className="landing-page">
-        {/* Header */}
-        <header className="landing-header">
-          <div className="header-container">
-            <div className="logo">
-              <h1>🗺️ MapStory Creator</h1>
-            </div>
-            <nav className="nav-menu">
-              <a href="#features">Features</a>
-              <a href="#community">Community Library</a>
-              <a href="#pricing">Pricing</a>
-              <a href="#blog">Blog</a>
-            </nav>
-            <div className="auth-buttons">
-              <button className="login-btn">Sign In</button>
-              <button className="signup-btn" onClick={handleGetStarted}>Sign Up Free</button>
-            </div>
-          </div>
-        </header>
+
 
         {/* Hero Section */}
         <section className="hero-section">
@@ -479,14 +514,7 @@ const Home = () => {
               <button className="hero-cta" onClick={handleGetStarted}>
                 Create Your First Map (Free)
               </button>
-              <div className="hero-demo">
-                <div className="demo-video">
-                  <div className="video-placeholder">
-                    <div className="play-button">▶️</div>
-                    <p>Watch Demo - Create a map in 2 minutes</p>
-                  </div>
-                </div>
-              </div>
+
             </div>
             <div className="hero-visual">
               <div className="floating-map">
@@ -561,6 +589,16 @@ const Home = () => {
                       <div className="story-meta">
                         <span className="story-author">by {story.author_name || 'Anonymous'}</span>
                         <span className="story-date">{new Date(story.created_at).toLocaleDateString('en-US')}</span>
+                      </div>
+                      <div className="story-stats">
+                        <span className="stat-item">
+                          <span className="stat-icon">👁️</span>
+                          <span className="stat-value">{story.views || 0}</span>
+                        </span>
+                        <span className="stat-item">
+                          <span className="stat-icon">❤️</span>
+                          <span className="stat-value">{story.likes || 0}</span>
+                        </span>
                       </div>
                     </div>
                     <div className="story-actions">
@@ -745,9 +783,13 @@ const Home = () => {
                                       <a href={`/map/${selectedStory.id}`} className="story-modal-view-btn">
                       View Full Map
                     </a>
-                    <button className="story-modal-like-btn">
-                      ❤️ Like
-                    </button>
+                                    <button 
+                  className="story-modal-like-btn"
+                  onClick={() => handleLikeStory(selectedStory.id)}
+                  disabled={isLiking}
+                >
+                  {isLiking ? '⏳ Liking...' : '❤️ Like'}
+                </button>
                 </div>
               </div>
             </div>
@@ -929,6 +971,16 @@ const Home = () => {
                         {new Date(story.created_at).toLocaleDateString()}
                       </span>
                     </div>
+                    <div className="story-stats">
+                      <span className="stat-item">
+                        <span className="stat-icon">👁️</span>
+                        <span className="stat-value">{story.views || 0}</span>
+                      </span>
+                      <span className="stat-item">
+                        <span className="stat-icon">❤️</span>
+                        <span className="stat-value">{story.likes || 0}</span>
+                      </span>
+                    </div>
                   </div>
                   <div className="story-actions">
                     <button className="story-view-btn">View Story</button>
@@ -964,6 +1016,18 @@ const Home = () => {
                     {new Date(selectedStory.created_at).toLocaleDateString()}
                   </span>
                 </div>
+                <div className="story-modal-stats">
+                  <span className="modal-stat-item">
+                    <span className="stat-icon">👁️</span>
+                    <span className="stat-value">{selectedStory.views || 0}</span>
+                    <span className="stat-label">views</span>
+                  </span>
+                  <span className="modal-stat-item">
+                    <span className="stat-icon">❤️</span>
+                    <span className="stat-value">{selectedStory.likes || 0}</span>
+                    <span className="stat-label">likes</span>
+                  </span>
+                </div>
               </div>
               <div className="story-modal-actions">
                 <button 
@@ -975,8 +1039,12 @@ const Home = () => {
                 >
                   View Full Map
                 </button>
-                <button className="story-modal-like-btn">
-                  ❤️ Like
+                <button 
+                  className="story-modal-like-btn"
+                  onClick={() => handleLikeStory(selectedStory.id)}
+                  disabled={isLiking}
+                >
+                  ❤️ {isLiking ? 'Liking...' : 'Like'}
                 </button>
                 <button className="story-modal-share-btn">
                   📤 Share

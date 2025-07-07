@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
+import { loadGoogleMaps } from '../utils/googleMapsLoader';
 
 const MapEditor = () => {
   const [map, setMap] = useState(null);
@@ -39,27 +39,23 @@ const MapEditor = () => {
   const mapRef = useRef(null);
 
   useEffect(() => {
-    initializeMap();
+    // Add a small delay to ensure DOM is ready
+    setTimeout(() => {
+      initializeMap();
+    }, 100);
   }, []);
 
   const initializeMap = async () => {
     try {
       setLoading(true);
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
       
-      if (!apiKey) {
-        throw new Error('Google Maps API key is not configured');
+      if (!mapRef.current) {
+        console.error('Map container element not found');
+        setLoading(false);
+        return;
       }
 
-      const loader = new Loader({
-        apiKey: apiKey,
-        version: 'weekly',
-        libraries: ['places', 'drawing', 'geometry'],
-        region: 'US',
-        language: 'en'
-      });
-
-      const google = await loader.load();
+      const google = await loadGoogleMaps();
 
       const mapInstance = new google.maps.Map(mapRef.current, {
         center: { lat: 21.0285, lng: 105.8542 }, // Hanoi, Vietnam

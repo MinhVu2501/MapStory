@@ -6,5 +6,26 @@ export default defineConfig({
   define: {
     'process.env': {}
   },
-  envPrefix: 'VITE_'
+  envPrefix: 'VITE_',
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          maps: ['@googlemaps/js-api-loader']
+        }
+      }
+    }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  }
 })

@@ -2205,10 +2205,62 @@ main {
   border-radius: 12px 12px 0 0;
 }
 
+.route-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.route-header-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .route-summary h3 {
-  margin: 0 0 15px 0;
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
+}
+
+.route-minimize-btn,
+.route-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
+
+.route-close-btn {
+  font-size: 1.5rem;
+  width: 30px;
+  height: 30px;
+}
+
+.route-minimize-btn:hover,
+.route-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.route-info-panel.minimized {
+  max-height: auto;
+}
+
+.route-info-panel.minimized .route-summary {
+  border-bottom: none;
 }
 
 .route-stats {
@@ -2472,29 +2524,7 @@ main {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.demo-video {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  padding: 2rem;
-  backdrop-filter: blur(10px);
-}
 
-.video-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.play-button {
-  font-size: 3rem;
-  cursor: pointer;
-  transition: transform 0.3s;
-}
-
-.play-button:hover {
-  transform: scale(1.1);
-}
 
 .floating-map {
   position: relative;
@@ -4073,11 +4103,17 @@ main {
   }
   
   .route-info-panel {
-    position: static;
-    width: 100%;
-    max-height: none;
-    margin: 10px;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: auto;
+    width: auto;
+    max-height: 70vh;
+    margin: 0;
     border-radius: 12px;
+    z-index: 1001;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
   
   .map-view-header {
@@ -4093,5 +4129,282 @@ main {
   
   .markers-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .route-steps,
+  .route-locations {
+    padding: 15px;
+  }
+  
+  .route-summary {
+    padding: 15px;
+  }
+  
+  .route-summary h3 {
+    font-size: 1.1rem;
+  }
+  
+  .route-stats .stat {
+    font-size: 0.85rem;
+  }
+  
+  .step-route {
+    font-size: 0.85rem;
+  }
+  
+  .step-details {
+    font-size: 0.75rem;
+  }
+}
+
+/* Medium screens (tablets) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .route-info-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    left: auto;
+    bottom: auto;
+    width: 320px;
+    max-height: 80vh;
+    z-index: 1001;
+  }
+}
+
+/* Small screens (mobile landscape) */
+@media (max-width: 480px) {
+  .route-info-panel {
+    position: fixed;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: auto;
+    width: auto;
+    max-height: 60vh;
+    margin: 0;
+    border-radius: 8px;
+    z-index: 1001;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+  
+  .route-summary {
+    padding: 12px;
+  }
+  
+  .route-summary h3 {
+    font-size: 1rem;
+  }
+  
+  .route-steps,
+  .route-locations {
+    padding: 12px;
+  }
+  
+  .route-step {
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .tour-location {
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .route-stats .stat {
+    font-size: 0.8rem;
+  }
+  
+  .step-route {
+    font-size: 0.8rem;
+  }
+  
+  .step-details {
+    font-size: 0.7rem;
+  }
+  
+  .location-info strong {
+    font-size: 0.85rem;
+  }
+  
+  .location-info p {
+    font-size: 0.75rem;
+  }
+}
+
+/* Map View Stats and Like Button */
+.map-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.stat-icon {
+  font-size: 1.2rem;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.like-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.like-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.like-btn.liked {
+  background: linear-gradient(135deg, #ff4757, #ff6b6b);
+  animation: pulse 0.3s ease-in-out;
+}
+
+.like-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Mobile responsiveness for map stats */
+@media (max-width: 768px) {
+  .map-stats {
+    gap: 1rem;
+    padding: 0.75rem;
+  }
+  
+  .stat-item {
+    font-size: 0.8rem;
+  }
+  
+  .stat-icon {
+    font-size: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1rem;
+  }
+  
+  .like-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Story Stats on Home Page */
+.story-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.story-stats .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.story-stats .stat-icon {
+  font-size: 1rem;
+}
+
+.story-stats .stat-value {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Story Modal Stats */
+.story-modal-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.modal-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.modal-stat-item .stat-icon {
+  font-size: 1.2rem;
+}
+
+.modal-stat-item .stat-value {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.modal-stat-item .stat-label {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+/* Mobile responsiveness for story stats */
+@media (max-width: 768px) {
+  .story-stats {
+    gap: 0.75rem;
+  }
+  
+  .story-stats .stat-item {
+    font-size: 0.8rem;
+  }
+  
+  .story-modal-stats {
+    gap: 1rem;
+    padding: 0.75rem;
+  }
+  
+  .modal-stat-item {
+    font-size: 0.8rem;
+  }
+  
+  .modal-stat-item .stat-value {
+    font-size: 1rem;
   }
 }

@@ -5,7 +5,13 @@ const {
   fetchMaps, 
   getMapById,
   updateMap,
-  deleteMap
+  deleteMap,
+  incrementViews,
+  incrementLikes,
+  decrementLikes,
+  likeMap,
+  unlikeMap,
+  hasUserLikedMap
 } = require('../db/maps'); 
 const { fetchMarkers } = require('../db/markers'); 
 const { authRequired } = require('./middleware/auth'); 
@@ -57,6 +63,10 @@ mapsRouter.get('/:id', async (req, res, next) => {
     if (!map.is_public && (!req.user || req.user.id !== map.user_id)) {
       return res.status(403).send({ message: 'Access denied to private map.' });
     }
+
+    // Increment views count when map is accessed
+    await incrementViews(req.params.id);
+    
     res.send(map);
   } catch (error) {
     next(error);
@@ -130,5 +140,83 @@ mapsRouter.delete('/:id', authRequired, async (req, res, next) => {
   }
 });
 
+// Like a map (requires authentication)
+mapsRouter.post('/:id/like', authRequired, async (req, res, next) => {
+  try {
+    const mapId = req.params.id;
+    const userId = req.user.id;
+    
+    const existingMap = await getMapById(mapId);
+    if (!existingMap) {
+      return res.status(404).send({ message: 'Map not found.' });
+    }
+    
+    if (!existingMap.is_public) {
+      return res.status(403).send({ message: 'Cannot like private map.' });
+    }
+
+    const result = await likeMap(mapId, userId);
+    res.send({ 
+      message: 'Map liked successfully!', 
+      likes: result.likes,
+      isLiked: true
+    });
+  } catch (error) {
+    if (error.message === 'User has already liked this map') {
+      return res.status(400).send({ message: 'You have already liked this map.' });
+    }
+    next(error);
+  }
+});
+
+// Unlike a map (requires authentication)
+mapsRouter.delete('/:id/like', authRequired, async (req, res, next) => {
+  try {
+    const mapId = req.params.id;
+    const userId = req.user.id;
+    
+    const existingMap = await getMapById(mapId);
+    if (!existingMap) {
+      return res.status(404).send({ message: 'Map not found.' });
+    }
+    
+    if (!existingMap.is_public) {
+      return res.status(403).send({ message: 'Cannot unlike private map.' });
+    }
+
+    const result = await unlikeMap(mapId, userId);
+    res.send({ 
+      message: 'Map unliked successfully!', 
+      likes: result.likes,
+      isLiked: false
+    });
+  } catch (error) {
+    if (error.message === 'User has not liked this map') {
+      return res.status(400).send({ message: 'You have not liked this map.' });
+    }
+    next(error);
+  }
+});
+
+// Check if user has liked a map
+mapsRouter.get('/:id/like-status', async (req, res, next) => {
+  try {
+    const mapId = req.params.id;
+    const userId = req.user ? req.user.id : null;
+    
+    const existingMap = await getMapById(mapId);
+    if (!existingMap) {
+      return res.status(404).send({ message: 'Map not found.' });
+    }
+
+    const hasLiked = await hasUserLikedMap(mapId, userId);
+    res.send({ 
+      isLiked: hasLiked,
+      likes: existingMap.likes
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = mapsRouter;
