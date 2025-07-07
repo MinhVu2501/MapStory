@@ -1,7 +1,10 @@
 require('dotenv').config();
-const client = require('./client');
+const { Client } = require('pg');
 
 const initializeDatabase = async () => {
+  // Create a new client instance for initialization
+  const client = new Client(process.env.DATABASE_URL);
+  
   try {
     console.log('🔄 Connecting to database...');
     await client.connect();
