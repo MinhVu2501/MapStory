@@ -31,19 +31,4 @@ dist-ssr
 
 # Production files
 mapstory.log
-ecosystem.config.js
 backup.sql
-
-# Docker
-docker-compose.override.yml
-.docker/
-
-# SSL certificates
-ssl/
-*.pem
-*.key
-*.crt
-
-# Deployment
-.deploy/
-deploy.log
