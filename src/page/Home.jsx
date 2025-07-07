@@ -43,6 +43,12 @@ const Home = () => {
   // Like functionality
   const [isLiking, setIsLiking] = useState(false);
 
+  // Route search state
+  const [routeSearchQuery, setRouteSearchQuery] = useState('');
+  const [availableRoutes, setAvailableRoutes] = useState([]);
+  const [filteredRoutes, setFilteredRoutes] = useState([]);
+  const [routeSearchLoading, setRouteSearchLoading] = useState(false);
+
   useEffect(() => {
     // Only initialize map when not showing landing page
     if (!showLandingPage) {
@@ -429,7 +435,46 @@ const Home = () => {
   // Load public stories on component mount
   useEffect(() => {
     fetchPublicStories();
+    fetchAvailableRoutes();
   }, []);
+
+  // Fetch available routes
+  const fetchAvailableRoutes = async () => {
+    try {
+      setRouteSearchLoading(true);
+      const response = await fetch(buildApiUrl('/api/maps'));
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch routes');
+      }
+      
+      const data = await response.json();
+      // Filter maps that have routes (maps with multiple markers)
+      const routeMaps = data.filter(map => map.markers?.length >= 2 || 
+        ['Saigon Food Tour', 'Historical Landmarks of Hanoi', 'Tokyo Highlights'].includes(map.title));
+      
+      setAvailableRoutes(routeMaps);
+      setFilteredRoutes(routeMaps);
+    } catch (err) {
+      console.error('Error fetching routes:', err);
+    } finally {
+      setRouteSearchLoading(false);
+    }
+  };
+
+  // Filter routes based on search query
+  useEffect(() => {
+    if (!routeSearchQuery.trim()) {
+      setFilteredRoutes(availableRoutes);
+    } else {
+      const filtered = availableRoutes.filter(route =>
+        route.title.toLowerCase().includes(routeSearchQuery.toLowerCase()) ||
+        route.description.toLowerCase().includes(routeSearchQuery.toLowerCase()) ||
+        (route.author_name && route.author_name.toLowerCase().includes(routeSearchQuery.toLowerCase()))
+      );
+      setFilteredRoutes(filtered);
+    }
+  }, [routeSearchQuery, availableRoutes]);
 
   // Handle story selection
   const handleStoryClick = (story) => {
@@ -561,6 +606,74 @@ const Home = () => {
         </section>
 
         {/* Featured Map Stories */}
+        <section id="routes" className="route-search-section">
+          <div className="container">
+            <h2>🗺️ Discover Existing Routes</h2>
+            <p>Search and explore pre-made routes with detailed directions</p>
+            
+            <div className="route-search-bar">
+              <div className="search-input-container">
+                <input
+                  type="text"
+                  placeholder="Search routes by name, location, or description..."
+                  value={routeSearchQuery}
+                  onChange={(e) => setRouteSearchQuery(e.target.value)}
+                  className="route-search-input"
+                />
+                <span className="search-icon">🔍</span>
+              </div>
+            </div>
+
+            {routeSearchLoading ? (
+              <div className="routes-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading routes...</p>
+              </div>
+            ) : (
+              <div className="routes-grid">
+                {filteredRoutes.length > 0 ? (
+                  filteredRoutes.map((route) => (
+                    <div key={route.id} className="route-card" onClick={() => window.open(`/map/${route.id}`, '_blank')}>
+                      <div className="route-header">
+                        <h3>{route.title}</h3>
+                        <div className="route-stats">
+                          <span className="route-views">👁️ {route.views || 0}</span>
+                          <span className="route-likes">❤️ {route.likes || 0}</span>
+                        </div>
+                      </div>
+                      <p className="route-description">{route.description}</p>
+                      <div className="route-info">
+                        <span className="route-author">By {route.author_name || 'Anonymous'}</span>
+                        <span className="route-type">🚶‍♂️ Walking Route</span>
+                      </div>
+                      <div className="route-features">
+                        <span className="feature-tag">📍 Multiple Stops</span>
+                        <span className="feature-tag">🛣️ Optimized Route</span>
+                        <span className="feature-tag">📱 Mobile Friendly</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-routes-found">
+                    <div className="no-routes-icon">🗺️</div>
+                    <h3>No routes found</h3>
+                    <p>Try adjusting your search terms or browse all available routes</p>
+                  </div>
+                                 )}
+               </div>
+             )}
+             
+             <div className="routes-section-footer">
+               <button 
+                 className="view-all-routes-btn"
+                 onClick={() => window.open('/routes', '_blank')}
+               >
+                 View All Routes & Advanced Search
+               </button>
+             </div>
+           </div>
+         </section>
+
         <section id="community" className="featured-stories">
           <div className="container">
             <h2>Map Story Examples</h2>
