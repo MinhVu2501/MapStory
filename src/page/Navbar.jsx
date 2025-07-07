@@ -42,6 +42,9 @@ const Navbar = () => {
         <li>
           <Link to="/">Home</Link>
         </li>
+        <li>
+          <Link to="/explore">Explore</Link>
+        </li>
         {user && (
           <li>
             <Link to="/my-maps">My Maps</Link>

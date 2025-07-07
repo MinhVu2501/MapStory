@@ -544,6 +544,12 @@ const Home = () => {
           <div className="feature-card">
             <h3>📍 Explore Locations</h3>
             <p>Search and discover interesting places around the world</p>
+            <button 
+              onClick={() => window.location.href = '/explore'} 
+              className="action-button"
+            >
+              Start Exploring
+            </button>
           </div>
           <div className="feature-card">
             <h3>🗺️ Create Maps</h3>
