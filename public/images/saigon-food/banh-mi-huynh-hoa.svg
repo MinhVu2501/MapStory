@@ -1,0 +1,71 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#f8f9fa"/>
+  
+  <!-- Shop building -->
+  <rect x="60" y="100" width="280" height="140" fill="#ffd700" stroke="#ff8c00" stroke-width="3"/>
+  
+  <!-- Roof -->
+  <polygon points="50,100 200,60 350,100" fill="#ff6347" stroke="#ff4500" stroke-width="2"/>
+  
+  <!-- Sign -->
+  <rect x="100" y="70" width="200" height="35" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="200" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ff6347">BANH MI HUYNH HOA</text>
+  
+  <!-- Windows -->
+  <rect x="80" y="130" width="40" height="30" fill="#87ceeb" stroke="#333" stroke-width="2"/>
+  <rect x="140" y="130" width="40" height="30" fill="#87ceeb" stroke="#333" stroke-width="2"/>
+  <rect x="220" y="130" width="40" height="30" fill="#87ceeb" stroke="#333" stroke-width="2"/>
+  <rect x="280" y="130" width="40" height="30" fill="#87ceeb" stroke="#333" stroke-width="2"/>
+  
+  <!-- Counter -->
+  <rect x="80" y="180" width="240" height="40" fill="#8b4513" stroke="#654321" stroke-width="2"/>
+  
+  <!-- Banh Mi sandwiches -->
+  <ellipse cx="120" cy="200" rx="25" ry="8" fill="#deb887" stroke="#d2691e" stroke-width="2"/>
+  <ellipse cx="120" cy="195" rx="20" ry="6" fill="#fff"/>
+  <rect x="110" y="193" width="20" height="4" fill="#ff6347"/>
+  <rect x="112" y="191" width="16" height="2" fill="#228b22"/>
+  <rect x="114" y="189" width="12" height="2" fill="#ff4500"/>
+  
+  <ellipse cx="180" cy="200" rx="25" ry="8" fill="#deb887" stroke="#d2691e" stroke-width="2"/>
+  <ellipse cx="180" cy="195" rx="20" ry="6" fill="#fff"/>
+  <rect x="170" y="193" width="20" height="4" fill="#ff6347"/>
+  <rect x="172" y="191" width="16" height="2" fill="#228b22"/>
+  <rect x="174" y="189" width="12" height="2" fill="#ff4500"/>
+  
+  <ellipse cx="240" cy="200" rx="25" ry="8" fill="#deb887" stroke="#d2691e" stroke-width="2"/>
+  <ellipse cx="240" cy="195" rx="20" ry="6" fill="#fff"/>
+  <rect x="230" y="193" width="20" height="4" fill="#ff6347"/>
+  <rect x="232" y="191" width="16" height="2" fill="#228b22"/>
+  <rect x="234" y="189" width="12" height="2" fill="#ff4500"/>
+  
+  <ellipse cx="300" cy="200" rx="25" ry="8" fill="#deb887" stroke="#d2691e" stroke-width="2"/>
+  <ellipse cx="300" cy="195" rx="20" ry="6" fill="#fff"/>
+  <rect x="290" y="193" width="20" height="4" fill="#ff6347"/>
+  <rect x="292" y="191" width="16" height="2" fill="#228b22"/>
+  <rect x="294" y="189" width="12" height="2" fill="#ff4500"/>
+  
+  <!-- Chef -->
+  <circle cx="200" cy="160" r="12" fill="#ffdbac"/>
+  <rect x="195" y="172" width="10" height="20" fill="#fff"/>
+  <rect x="190" y="168" width="20" height="8" fill="#fff"/>
+  <rect x="195" y="155" width="10" height="8" fill="#fff"/>
+  
+  <!-- Customers -->
+  <circle cx="120" cy="230" r="8" fill="#ffdbac"/>
+  <rect x="115" y="238" width="10" height="15" fill="#4a90e2"/>
+  <circle cx="280" cy="230" r="8" fill="#ffdbac"/>
+  <rect x="275" y="238" width="10" height="15" fill="#e74c3c"/>
+  
+  <!-- Queue line -->
+  <line x1="120" y1="250" x2="280" y2="250" stroke="#333" stroke-width="2" stroke-dasharray="5,5"/>
+  
+  <!-- Vietnamese flag -->
+  <rect x="20" y="120" width="30" height="20" fill="#da020e"/>
+  <polygon points="25,125 30,123 35,125 30,127 25,130 28,125 32,125 30,127 28,125" fill="#ffff00"/>
+  
+  <!-- Text -->
+  <text x="200" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333">Banh Mi Huynh Hoa</text>
+  <text x="200" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#666">Famous Banh Mi Shop</text>
+</svg> 
