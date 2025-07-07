@@ -5,7 +5,7 @@ const initializeDatabase = async () => {
   // Create a new client instance for initialization
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('render.com') 
+    ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com') 
       ? { rejectUnauthorized: false } 
       : false
   });

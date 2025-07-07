@@ -290,7 +290,7 @@ const setClient = (clientInstance) => {
 module.exports = {
   setClient,
   createMap,
-  fetchMaps,
+  fetchMaps, 
   getMapById,
   updateMap,
   deleteMap,

@@ -109,7 +109,7 @@ const startServer = async () => {
   // Create a fresh client instance for the server
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('render.com') 
+    ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com') 
       ? { rejectUnauthorized: false } 
       : false
   });
