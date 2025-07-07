@@ -7,6 +7,7 @@ const {
   updateMap,
   deleteMap
 } = require('../db/maps'); 
+const { fetchMarkers } = require('../db/markers')
 const { authRequired } = require('./middleware/auth'); 
 
 
