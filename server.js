@@ -13,16 +13,20 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+      // Corrected: Allow Google Fonts for stylesheets
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com", "'unsafe-eval'"], // Added 'unsafe-eval' for some Google Maps internal scripts if needed, though generally try to avoid. You might remove if map works without it.
       scriptSrcElem: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+      // Added fontSrc for the actual font files
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
-      connectSrc: ["'self'", "https://maps.googleapis.com"],
+      connectSrc: ["'self'", "https://maps.googleapis.com", "https://*.googleapis.com"], // Added *.googleapis.com for broader API calls
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [], // Recommended for production
     },
   },
   crossOriginEmbedderPolicy: false,
 }));
-
 
 app.use((req, res, next) => {
   res.setHeader('X-DNS-Prefetch-Control', 'off');
