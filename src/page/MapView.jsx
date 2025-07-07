@@ -191,7 +191,7 @@ const MapView = () => {
     }
   };
 
-  const createFoodTourRoute = async () => {
+  const createTourRoute = async () => {
     if (!map || !directionsRenderer || !mapData.markers || mapData.markers.length < 2) {
       return;
     }
@@ -199,23 +199,50 @@ const MapView = () => {
     const google = window.google;
     const directionsService = new google.maps.DirectionsService();
 
-    // Define the optimal order for a food tour (starting from a central location)
-    const tourOrder = [
-      'Ben Thanh Market',
-      'Nguyen Hue Walking Street', 
-      'Pho 24',
-      'Banh Mi Huynh Hoa',
-      'Bui Vien Street',
-      'Secret Garden',
-      'Skydeck Bar'
-    ];
+    // Define optimal tour orders for predefined maps
+    const tourOrders = {
+      'Saigon Food Tour': [
+        'Ben Thanh Market',
+        'Nguyen Hue Walking Street', 
+        'Pho 24',
+        'Banh Mi Huynh Hoa',
+        'Bui Vien Street',
+        'Secret Garden',
+        'Skydeck Bar'
+      ],
+      'Historical Landmarks of Hanoi': [
+        'Hoan Kiem Lake',
+        'Temple of Literature',
+        'Ho Chi Minh Mausoleum'
+      ],
+      'Tokyo Highlights': [
+        'Senso-ji Temple',
+        'Tokyo Tower',
+        'Shibuya Crossing'
+      ]
+    };
 
-    // Sort markers according to tour order
-    const sortedMarkers = tourOrder.map(name => 
-      mapData.markers.find(marker => 
-        marker.name.toLowerCase().includes(name.toLowerCase())
-      )
-    ).filter(Boolean);
+    // Get tour order for this map, or use default order (by order_index)
+    const tourOrder = tourOrders[mapData.title];
+    let sortedMarkers;
+
+    if (tourOrder) {
+      // Sort markers according to predefined tour order
+      sortedMarkers = tourOrder.map(name => 
+        mapData.markers.find(marker => 
+          marker.name.toLowerCase().includes(name.toLowerCase())
+        )
+      ).filter(Boolean);
+      
+      // If predefined order doesn't match all markers, fall back to order_index
+      if (sortedMarkers.length < mapData.markers.length) {
+        console.log('Predefined order incomplete, using order_index for all markers');
+        sortedMarkers = [...mapData.markers].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+      }
+    } else {
+      // Default: sort by order_index for user-created maps
+      sortedMarkers = [...mapData.markers].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+    }
 
     if (sortedMarkers.length < 2) {
       console.error('Not enough markers found for route');
@@ -290,11 +317,12 @@ const MapView = () => {
           order: index + 1,
           name: marker.name,
           description: marker.description
-        }))
+        })),
+        mapTitle: mapData.title
       };
       
       setRouteInfo(routeData);
-      console.log(`Food tour route created: ${routeData.totalDistance}km, ${routeData.totalDuration} minutes walking`);
+      console.log(`${mapData.title} route created: ${routeData.totalDistance}km, ${routeData.totalDuration} minutes walking`);
       
     } catch (error) {
       console.error('Error creating route:', error);
@@ -311,7 +339,7 @@ const MapView = () => {
       setRouteInfo(null);
     } else {
       // Show route
-      createFoodTourRoute();
+      createTourRoute();
       setShowRoute(true);
     }
   };
@@ -412,7 +440,7 @@ const MapView = () => {
             className={`route-btn ${showRoute ? 'active' : ''}`}
             onClick={toggleRoute}
           >
-            {showRoute ? '🗺️ Hide Route' : '🚶 Show Food Tour Route'}
+            {showRoute ? '🗺️ Hide Route' : '🚶 Show Tour Route'}
           </button>
           <button 
             className="back-btn"
@@ -430,7 +458,7 @@ const MapView = () => {
           <div className={`route-info-panel ${isRoutePanelMinimized ? 'minimized' : ''}`} ref={routePanelRef}>
             <div className="route-summary">
               <div className="route-header">
-                <h3>🚶 Food Tour Route</h3>
+                <h3>🚶 {routeInfo.mapTitle} Route</h3>
                 <div className="route-header-buttons">
                   <button 
                     className="route-minimize-btn"

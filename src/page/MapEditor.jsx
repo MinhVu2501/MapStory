@@ -13,7 +13,7 @@ const MapEditor = () => {
     theme: 'default',
     walkthrough: false
   });
-  const [sidebarTab, setSidebarTab] = useState('markers'); // 'markers' or 'settings'
+  const [sidebarTab, setSidebarTab] = useState('markers'); // 'markers', 'settings', or 'route'
   const [markerIcons] = useState([
     { id: 'default', icon: '📍', name: 'Default' },
     { id: 'food', icon: '🍽️', name: 'Food' },
@@ -37,6 +37,9 @@ const MapEditor = () => {
   const [isAddingMarker, setIsAddingMarker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showRoutePreview, setShowRoutePreview] = useState(false);
+  const [directionsRenderer, setDirectionsRenderer] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null);
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -69,6 +72,17 @@ const MapEditor = () => {
       });
 
       setMap(mapInstance);
+
+      // Initialize directions renderer for route preview
+      const directionsRendererInstance = new google.maps.DirectionsRenderer({
+        suppressMarkers: true, // We'll use our custom markers
+        polylineOptions: {
+          strokeColor: '#FF6B35',
+          strokeWeight: 4,
+          strokeOpacity: 0.8
+        }
+      });
+      setDirectionsRenderer(directionsRendererInstance);
 
       // Add click listener for adding markers
       mapInstance.addListener('click', (event) => {
@@ -228,51 +242,171 @@ const MapEditor = () => {
 
   const saveMap = async () => {
     if (!mapSettings.title.trim()) {
-      alert('Vui lòng nhập tên bản đồ');
+      alert('Please enter a map name');
+      return;
+    }
+
+    if (markers.length === 0) {
+      alert('Please add at least one marker to your map');
       return;
     }
 
     setSaving(true);
     try {
+      // Get authentication token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in to save your map');
+        return;
+      }
+
+      // Calculate map center based on markers
+      const centerLat = markers.reduce((sum, marker) => sum + marker.position.lat, 0) / markers.length;
+      const centerLng = markers.reduce((sum, marker) => sum + marker.position.lng, 0) / markers.length;
+
+      // Create map first
       const mapData = {
         title: mapSettings.title,
         description: mapSettings.description,
         isPublic: mapSettings.isPublic,
-        theme: mapSettings.theme,
-        walkthrough: mapSettings.walkthrough,
-        markers: markers.map(marker => ({
-          id: marker.id,
-          position: marker.position,
-          title: marker.title,
-          description: marker.description,
-          imageUrl: marker.imageUrl,
-          link: marker.link,
-          icon: marker.icon,
-          color: marker.color,
-          order: marker.order
-        }))
+        centerLat: centerLat,
+        centerLng: centerLng,
+        zoomLevel: 12,
+        thumbnailUrl: null
       };
 
-      const response = await fetch(buildApiUrl('/api/maps'), {
+      const mapResponse = await fetch(buildApiUrl('/api/maps'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(mapData)
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        alert('Bản đồ đã được lưu thành công!');
-        console.log('Map saved:', result);
-      } else {
-        throw new Error('Failed to save map');
+      if (!mapResponse.ok) {
+        throw new Error('Failed to create map');
       }
+
+      const createdMap = await mapResponse.json();
+      console.log('Map created:', createdMap);
+
+      // Create markers for the map
+      const markerPromises = markers.map(marker => 
+        fetch(buildApiUrl('/api/markers'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            mapId: createdMap.id,
+            name: marker.title,
+            description: marker.description,
+            latitude: marker.position.lat,
+            longitude: marker.position.lng,
+            imageUrl: marker.imageUrl || null,
+            orderIndex: marker.order
+          })
+        })
+      );
+
+      const markerResults = await Promise.all(markerPromises);
+      const failedMarkers = markerResults.filter(response => !response.ok);
+      
+      if (failedMarkers.length > 0) {
+        console.warn(`${failedMarkers.length} markers failed to save`);
+      }
+
+      alert('Map saved successfully! 🎉');
+      console.log('Map and markers saved successfully');
+      
+      // Optionally redirect to the created map
+      // window.location.href = `/map/${createdMap.id}`;
+      
     } catch (error) {
       console.error('Error saving map:', error);
-      alert('Có lỗi xảy ra khi lưu bản đồ');
+      alert('Failed to save map. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const previewRoute = async () => {
+    if (!map || !directionsRenderer || markers.length < 2) {
+      alert('You need at least 2 markers to create a route');
+      return;
+    }
+
+    const google = window.google;
+    const directionsService = new google.maps.DirectionsService();
+
+    // Sort markers by order
+    const sortedMarkers = [...markers].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    // Create waypoints (all locations except first and last)
+    const waypoints = sortedMarkers.slice(1, -1).map(marker => ({
+      location: new google.maps.LatLng(
+        parseFloat(marker.position.lat), 
+        parseFloat(marker.position.lng)
+      ),
+      stopover: true
+    }));
+
+    const request = {
+      origin: new google.maps.LatLng(
+        parseFloat(sortedMarkers[0].position.lat), 
+        parseFloat(sortedMarkers[0].position.lng)
+      ),
+      destination: new google.maps.LatLng(
+        parseFloat(sortedMarkers[sortedMarkers.length - 1].position.lat), 
+        parseFloat(sortedMarkers[sortedMarkers.length - 1].position.lng)
+      ),
+      waypoints: waypoints,
+      optimizeWaypoints: true,
+      travelMode: google.maps.TravelMode.WALKING
+    };
+
+    try {
+      const result = await new Promise((resolve, reject) => {
+        directionsService.route(request, (result, status) => {
+          if (status === 'OK') {
+            resolve(result);
+          } else {
+            reject(new Error(`Directions request failed: ${status}`));
+          }
+        });
+      });
+
+      if (showRoutePreview) {
+        // Hide route
+        directionsRenderer.setMap(null);
+        setShowRoutePreview(false);
+        setRouteInfo(null);
+      } else {
+        // Show route
+        directionsRenderer.setDirections(result);
+        directionsRenderer.setMap(map);
+        setShowRoutePreview(true);
+
+        // Calculate route info
+        let totalDistance = 0;
+        let totalDuration = 0;
+        
+        result.routes[0].legs.forEach((leg) => {
+          totalDistance += leg.distance.value;
+          totalDuration += leg.duration.value;
+        });
+
+        setRouteInfo({
+          totalDistance: (totalDistance/1000).toFixed(1),
+          totalDuration: Math.round(totalDuration/60),
+          stops: sortedMarkers.length
+        });
+      }
+    } catch (error) {
+      console.error('Error creating route preview:', error);
+      alert('Failed to create route preview. Please check your markers.');
     }
   };
 
@@ -329,6 +463,12 @@ const MapEditor = () => {
               onClick={() => setSidebarTab('markers')}
             >
               📍 Markers ({markers.length})
+            </button>
+            <button 
+              className={`sidebar-tab ${sidebarTab === 'route' ? 'active' : ''}`}
+              onClick={() => setSidebarTab('route')}
+            >
+              🚶 Route
             </button>
             <button 
               className={`sidebar-tab ${sidebarTab === 'settings' ? 'active' : ''}`}
@@ -467,6 +607,105 @@ const MapEditor = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {sidebarTab === 'route' && (
+              <div className="route-panel">
+                <h3>Route Settings</h3>
+                <div className="route-info">
+                  <p>Create a walking route connecting your markers in order.</p>
+                  <p>Current markers: {markers.length}</p>
+                  {markers.length < 2 && (
+                    <p className="route-warning">⚠️ You need at least 2 markers to create a route</p>
+                  )}
+                </div>
+
+                {markers.length >= 2 && (
+                  <div className="route-actions">
+                    <button 
+                      className={`route-preview-btn ${showRoutePreview ? 'active' : ''}`}
+                      onClick={previewRoute}
+                    >
+                      {showRoutePreview ? '🗺️ Hide Route Preview' : '🚶 Show Route Preview'}
+                    </button>
+                    
+                    {routeInfo && (
+                      <div className="route-stats">
+                        <h4>Route Information:</h4>
+                        <div className="route-stat">
+                          <span className="stat-label">Total Distance:</span>
+                          <span className="stat-value">{routeInfo.totalDistance} km</span>
+                        </div>
+                        <div className="route-stat">
+                          <span className="stat-label">Walking Time:</span>
+                          <span className="stat-value">{routeInfo.totalDuration} minutes</span>
+                        </div>
+                        <div className="route-stat">
+                          <span className="stat-label">Number of Stops:</span>
+                          <span className="stat-value">{routeInfo.stops} locations</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="route-order">
+                  <h4>Route Order:</h4>
+                  <p>Drag markers to reorder the route sequence</p>
+                  {markers.length > 0 && (
+                    <div className="route-sequence">
+                      {[...markers]
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
+                        .map((marker, index) => (
+                          <div key={marker.id} className="route-step">
+                            <span className="step-number">{index + 1}</span>
+                            <span className="step-name">{marker.title || `Point ${index + 1}`}</span>
+                            <div className="step-actions">
+                              {index > 0 && (
+                                <button 
+                                  className="move-up-btn"
+                                  onClick={() => {
+                                    const newOrder = markers.find(m => m.order === index).order;
+                                    updateMarker(marker.id, { order: newOrder });
+                                    updateMarker(markers.find(m => m.order === index).id, { order: marker.order });
+                                  }}
+                                  title="Move up"
+                                >
+                                  ⬆️
+                                </button>
+                              )}
+                              {index < markers.length - 1 && (
+                                <button 
+                                  className="move-down-btn"
+                                  onClick={() => {
+                                    const nextMarker = markers.find(m => m.order === index + 2);
+                                    if (nextMarker) {
+                                      updateMarker(marker.id, { order: nextMarker.order });
+                                      updateMarker(nextMarker.id, { order: marker.order });
+                                    }
+                                  }}
+                                  title="Move down"
+                                >
+                                  ⬇️
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="route-tips">
+                  <h4>💡 Route Tips:</h4>
+                  <ul>
+                    <li>The route will connect your markers in the order specified</li>
+                    <li>Use the up/down arrows to change the route sequence</li>
+                    <li>The route uses walking directions for the best experience</li>
+                    <li>Preview your route before saving to see the path</li>
+                  </ul>
+                </div>
               </div>
             )}
 
