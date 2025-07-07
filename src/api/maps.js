@@ -31,6 +31,21 @@ mapsRouter.get('/my-maps', authRequired, async (req, res, next) => {
     }
 });
 
+// New endpoint for public stories (shared stories)
+mapsRouter.get('/public-stories', async (req, res, next) => {
+    try {
+        const limit = parseInt(req.query.limit) || 12;
+        const offset = parseInt(req.query.offset) || 0;
+        const sortBy = req.query.sortBy || 'created_at';
+        const order = req.query.order || 'DESC';
+        
+        const publicStories = await fetchMaps(null, null, true, limit, offset, sortBy, order);
+        res.send(publicStories);
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 mapsRouter.get('/:id', async (req, res, next) => {
   try {
