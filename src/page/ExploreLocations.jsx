@@ -47,8 +47,8 @@ const ExploreLocations = () => {
 
   const initializeMap = async () => {
     try {
-      const apiKey = import.meta.env.VITE_Maps_API_KEY;
-      if (!apiKey || apiKey === 'YOUR_Maps_API_KEY') {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
         throw new Error('Google Maps API key is not configured.');
       }
 

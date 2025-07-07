@@ -40,12 +40,12 @@ const Home = () => {
     const initMap = async () => {
       try {
         setLoading(true);
-        const apiKey = import.meta.env.VITE_Maps_API_KEY;
+        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
         console.log('API Key loaded:', apiKey ? 'Yes' : 'No');
         console.log('API Key value:', apiKey);
 
-        if (!apiKey || apiKey === 'YOUR_Maps_API_KEY') {
-          throw new Error('Google Maps API key is not configured. Please add VITE_Maps_API_KEY to your .env file.');
+        if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
+          throw new Error('Google Maps API key is not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file.');
         }
 
         const loader = new Loader({
@@ -159,15 +159,15 @@ const Home = () => {
         // Setup Places Autocomplete
         const inputElement = searchInputRef.current;
         if (inputElement) {
-          const autocomplete = new google.maps.places.Autocomplete(inputElement, {
+        const autocomplete = new google.maps.places.Autocomplete(inputElement, {
             types: ['geocode', 'establishment'],
-            fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'types'],
+          fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'types'],
             componentRestrictions: { country: [] }
-          });
+        });
 
           autocomplete.bindTo('bounds', mapInstance);
 
-          autocomplete.addListener('place_changed', () => {
+        autocomplete.addListener('place_changed', () => {
             handlePlaceSelect(autocomplete, mapInstance, google);
           });
         }
@@ -205,30 +205,30 @@ const Home = () => {
   }, []);
 
   const handlePlaceSelect = (autocomplete, mapInstance, google) => {
-    activeMarkers.forEach(marker => marker.setMap(null));
-    setActiveMarkers([]);
+          activeMarkers.forEach(marker => marker.setMap(null));
+          setActiveMarkers([]);
 
-    const place = autocomplete.getPlace();
+          const place = autocomplete.getPlace();
 
-    if (!place.geometry || !place.geometry.location) {
-      console.error("Returned place contains no geometry or location for: ", place.name);
-      window.alert("No details available for input: '" + place.name + "'");
-      setSearchResults([]);
-      setSelectedLocation(null);
-      return;
-    }
+          if (!place.geometry || !place.geometry.location) {
+            console.error("Returned place contains no geometry or location for: ", place.name);
+            window.alert("No details available for input: '" + place.name + "'");
+            setSearchResults([]);
+            setSelectedLocation(null);
+            return;
+          }
 
-    if (place.geometry.viewport) {
-      mapInstance.fitBounds(place.geometry.viewport);
-    } else {
-      mapInstance.setCenter(place.geometry.location);
-      mapInstance.setZoom(17);
-    }
+          if (place.geometry.viewport) {
+            mapInstance.fitBounds(place.geometry.viewport);
+          } else {
+            mapInstance.setCenter(place.geometry.location);
+            mapInstance.setZoom(17);
+          }
 
-    const marker = new google.maps.Marker({
-      map: mapInstance,
-      title: place.name,
-      position: place.geometry.location,
+          const marker = new google.maps.Marker({
+            map: mapInstance,
+            title: place.name,
+            position: place.geometry.location,
       animation: google.maps.Animation.DROP,
       icon: {
         url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSIjMDA3Q0ZGIi8+Cjwvc3ZnPgo=',
@@ -237,36 +237,36 @@ const Home = () => {
       }
     });
 
-    setActiveMarkers([marker]);
+          setActiveMarkers([marker]);
 
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="padding: 10px; max-width: 300px;">
-          <h3 style="margin: 0 0 10px 0; color: #333;">${place.name}</h3>
-          <p style="margin: 5px 0; color: #666;">${place.formatted_address || ''}</p>
-          ${place.rating ? `<p style="margin: 5px 0; color: #ff6b35;">Rating: ${place.rating} ⭐</p>` : ''}
-          ${place.types && place.types.length > 0 ? `<p style="margin: 5px 0; color: #888; font-size: 12px;">Type: ${place.types[0].replace(/_/g, ' ')}</p>` : ''}
-          <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}', '_blank')" style="background: #667eea; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px;">View on Google Maps</button>
-        </div>
-      `
-    });
+          const infoWindow = new google.maps.InfoWindow({
+            content: `
+              <div style="padding: 10px; max-width: 300px;">
+                <h3 style="margin: 0 0 10px 0; color: #333;">${place.name}</h3>
+                <p style="margin: 5px 0; color: #666;">${place.formatted_address || ''}</p>
+                ${place.rating ? `<p style="margin: 5px 0; color: #ff6b35;">Rating: ${place.rating} ⭐</p>` : ''}
+                ${place.types && place.types.length > 0 ? `<p style="margin: 5px 0; color: #888; font-size: 12px;">Type: ${place.types[0].replace(/_/g, ' ')}</p>` : ''}
+                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}', '_blank')" style="background: #667eea; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px;">View on Google Maps</button>
+              </div>
+            `
+          });
 
-    marker.addListener('click', () => {
-      infoWindow.open(mapInstance, marker);
-    });
+          marker.addListener('click', () => {
+            infoWindow.open(mapInstance, marker);
+          });
 
-    const newResult = {
-      name: place.name,
-      address: place.formatted_address,
-      location: place.geometry.location,
-      rating: place.rating,
-      types: place.types,
-      place_id: place.place_id,
-      marker: marker,
-      infoWindow: infoWindow
-    };
-    setSearchResults([newResult]);
-    setSelectedLocation(newResult);
+          const newResult = {
+            name: place.name,
+            address: place.formatted_address,
+            location: place.geometry.location,
+            rating: place.rating,
+            types: place.types,
+            place_id: place.place_id,
+            marker: marker,
+            infoWindow: infoWindow
+          };
+          setSearchResults([newResult]);
+          setSelectedLocation(newResult);
   };
 
   const addMeasurementPoint = (latLng, mapInstance, google) => {
@@ -315,62 +315,62 @@ const Home = () => {
       setActiveMarkers([]);
 
       try {
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ address: searchQuery }, (results, status) => {
-          if (status === 'OK' && results && results.length > 0) {
-            const place = results[0];
-            if (!place.geometry || !place.geometry.location) {
-              setError("No details available for search query: '" + searchQuery + "'");
-              setLoading(false);
-              return;
-            }
-
-            if (place.geometry.viewport) {
-              map.fitBounds(place.geometry.viewport);
-            } else {
-              map.setCenter(place.geometry.location);
-              map.setZoom(17);
-            }
-
-            const marker = new window.google.maps.Marker({
-              map: map,
-              title: place.formatted_address,
-              position: place.geometry.location,
-              animation: window.google.maps.Animation.DROP
-            });
-            setActiveMarkers([marker]);
-
-            const infoWindow = new window.google.maps.InfoWindow({
-              content: `
-                <div style="padding: 10px; max-width: 300px;">
-                  <h3 style="margin: 0 0 10px 0; color: #333;">${place.formatted_address}</h3>
-                  ${place.place_id ? `<p style="margin: 5px 0; color: #888; font-size: 12px;">Place ID: ${place.place_id}</p>` : ''}
-                  <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.formatted_address)}&query_place_id=${place.place_id || ''}', '_blank')" style="background: #667eea; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px;">View on Google Maps</button>
-                </div>
-              `
-            });
-            marker.addListener('click', () => {
-              infoWindow.open(map, marker);
-            });
-
-            const newResult = {
-              name: place.formatted_address,
-              address: place.formatted_address,
-              location: place.geometry.location,
-              place_id: place.place_id,
-              marker: marker,
-              infoWindow: infoWindow
-            };
-            setSearchResults([newResult]);
-            setSelectedLocation(newResult);
-
-          } else {
-            setError(`Geocoding failed for "${searchQuery}" with status: ${status}`);
-            setSearchResults([]);
-            setSelectedLocation(null);
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: searchQuery }, (results, status) => {
+        if (status === 'OK' && results && results.length > 0) {
+          const place = results[0];
+          if (!place.geometry || !place.geometry.location) {
+            setError("No details available for search query: '" + searchQuery + "'");
+            setLoading(false);
+            return;
           }
-          setLoading(false);
-        });
+
+          if (place.geometry.viewport) {
+            map.fitBounds(place.geometry.viewport);
+          } else {
+            map.setCenter(place.geometry.location);
+            map.setZoom(17);
+          }
+
+          const marker = new window.google.maps.Marker({
+            map: map,
+            title: place.formatted_address,
+            position: place.geometry.location,
+            animation: window.google.maps.Animation.DROP
+          });
+          setActiveMarkers([marker]);
+
+          const infoWindow = new window.google.maps.InfoWindow({
+            content: `
+              <div style="padding: 10px; max-width: 300px;">
+                <h3 style="margin: 0 0 10px 0; color: #333;">${place.formatted_address}</h3>
+                ${place.place_id ? `<p style="margin: 5px 0; color: #888; font-size: 12px;">Place ID: ${place.place_id}</p>` : ''}
+                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.formatted_address)}&query_place_id=${place.place_id || ''}', '_blank')" style="background: #667eea; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px;">View on Google Maps</button>
+              </div>
+            `
+          });
+          marker.addListener('click', () => {
+            infoWindow.open(map, marker);
+          });
+
+          const newResult = {
+            name: place.formatted_address,
+            address: place.formatted_address,
+            location: place.geometry.location,
+            place_id: place.place_id,
+            marker: marker,
+            infoWindow: infoWindow
+          };
+          setSearchResults([newResult]);
+          setSelectedLocation(newResult);
+
+        } else {
+          setError(`Geocoding failed for "${searchQuery}" with status: ${status}`);
+          setSearchResults([]);
+          setSelectedLocation(null);
+        }
+        setLoading(false);
+      });
       } catch (err) {
         console.error('Geocoding error:', err);
         setError('Failed to search for location. Please try again.');

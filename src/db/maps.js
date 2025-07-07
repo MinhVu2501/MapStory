@@ -26,7 +26,7 @@ const fetchMaps = async (userId = null, searchTerm = null, publicOnly = false, l
     let queryParams = [];
     const conditions = [];
     let paramIndex = 1;
-
+   
     if (userId) {
       conditions.push(`m.user_id = $${paramIndex}`);
       queryParams.push(userId);

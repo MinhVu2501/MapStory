@@ -1,13 +1,9 @@
-// mapstory/src/pages/MapCreationForm.jsx
-
 import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom'; // No longer needed if rendered within Home
 
-// Add onSuccess and onCancel props
 const MapCreationForm = ({ mapInstance, onSuccess, onCancel }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(true); // Default to public
+  const [isPublic, setIsPublic] = useState(true); 
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [currentMapCenter, setCurrentMapCenter] = useState({ lat: null, lng: null });
   const [currentMapZoom, setCurrentMapZoom] = useState(null);
@@ -21,10 +17,10 @@ const MapCreationForm = ({ mapInstance, onSuccess, onCancel }) => {
   useEffect(() => {
     if (mapInstance) {
       const updateMapState = () => {
-        const center = mapInstance.getCenter();
-        const zoom = mapInstance.getZoom();
-        setCurrentMapCenter({ lat: center.lat(), lng: center.lng() });
-        setCurrentMapZoom(zoom);
+      const center = mapInstance.getCenter();
+      const zoom = mapInstance.getZoom();
+      setCurrentMapCenter({ lat: center.lat(), lng: center.lng() });
+      setCurrentMapZoom(zoom);
       };
 
       // Initial update
@@ -159,7 +155,7 @@ const MapCreationForm = ({ mapInstance, onSuccess, onCancel }) => {
   return (
     <div className="map-creation-form-wrapper">
       <div className="form-header">
-        <h2>Create New Map Story</h2>
+      <h2>Create New Map Story</h2>
         <button 
           type="button" 
           onClick={onCancel} 
@@ -217,13 +213,13 @@ const MapCreationForm = ({ mapInstance, onSuccess, onCancel }) => {
 
         <div className="form-group checkbox-group">
           <label className="checkbox-label">
-            <input
-              type="checkbox"
-              id="isPublic"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              disabled={loading}
-            />
+          <input
+            type="checkbox"
+            id="isPublic"
+            checked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+            disabled={loading}
+          />
             <span className="checkmark"></span>
             Make this map public
           </label>
@@ -280,15 +276,15 @@ const MapCreationForm = ({ mapInstance, onSuccess, onCancel }) => {
             ) : (
               'Create Map Story'
             )}
-          </button>
+        </button>
           <button 
             type="button" 
             onClick={onCancel} 
             disabled={loading} 
             className="cancel-button"
           >
-            Cancel
-          </button>
+          Cancel
+        </button>
         </div>
       </form>
     </div>
