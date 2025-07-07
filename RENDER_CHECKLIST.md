@@ -16,7 +16,7 @@ VITE_GOOGLE_MAPS_API_KEY=[Your Google Maps API key]
 ```
 
 ### 2. Service Configuration:
-- **Build Command**: `npm ci && npm run build`
+- **Build Command**: `npm install && npm run build`
 - **Start Command**: `npm start`
 - **Health Check Path**: `/api/maps`
 - **Port**: 10000 (auto-detected)

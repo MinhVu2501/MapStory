@@ -56,7 +56,7 @@ This guide will walk you through deploying your MapStory Creator application on 
    - **Branch**: `main`
    - **Root Directory**: Leave blank
    - **Runtime**: `Node`
-   - **Build Command**: `npm ci && npm run build`
+   - **Build Command**: `npm install && npm run build`
    - **Start Command**: `npm start`
    - **Plan**: Free (or paid for production)
 

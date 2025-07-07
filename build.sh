@@ -8,7 +8,7 @@ echo "🚀 Starting Render build process..."
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm ci
+npm install
 
 # Build the React application
 echo "🔨 Building React application..."
