@@ -15,7 +15,7 @@ const MyMapsPage = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:3000/api/maps/my-maps', {
+        const response = await fetch('http://localhost:3001/api/maps/my-maps', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

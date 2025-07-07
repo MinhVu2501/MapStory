@@ -1,5 +1,8 @@
+// mapstory/src/pages/Home.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
+import MapCreationForm from './MapCreationForm'; // <--- IMPORT THE MAP CREATION FORM
 
 const Home = () => {
   const [map, setMap] = useState(null);
@@ -11,6 +14,9 @@ const Home = () => {
   const mapRef = useRef(null);
   const searchInputRef = useRef(null);
 
+  // State to control visibility of the MapCreationForm
+  const [showCreateMapForm, setShowCreateMapForm] = useState(false); // <--- NEW STATE
+
   // Store active markers to clear them later
   const [activeMarkers, setActiveMarkers] = useState([]);
 
@@ -18,12 +24,10 @@ const Home = () => {
     const initMap = async () => {
       try {
         setLoading(true);
-        // *** THIS MUST BE VITE_Maps_API_KEY TO MATCH YOUR .env FILE ***
         const apiKey = import.meta.env.VITE_Maps_API_KEY;
         console.log('API Key loaded:', apiKey ? 'Yes' : 'No');
         console.log('API Key value:', apiKey);
 
-        // *** THIS CHECK AND ERROR MESSAGE STRING MUST ALSO REFERENCE VITE_Maps_API_KEY ***
         if (!apiKey || apiKey === 'YOUR_Maps_API_KEY') {
           throw new Error('Google Maps API key is not configured. Please add VITE_Maps_API_KEY to your .env file.');
         }
@@ -31,7 +35,9 @@ const Home = () => {
         const loader = new Loader({
           apiKey: apiKey,
           version: 'weekly',
-          libraries: ['places', 'geocoding']
+          libraries: ['places', 'geocoding'],
+          region: 'US',
+          language: 'en'
         });
 
         const google = await loader.load();
@@ -42,12 +48,13 @@ const Home = () => {
           mapTypeControl: true,
           streetViewControl: true,
           fullscreenControl: true,
-          zoomControl: true
+          zoomControl: true,
+          mapId: null // Remove mapId to avoid beta features
         });
 
         setMap(mapInstance);
 
-        // --- Replacing SearchBox with Autocomplete ---
+        // Use Places Autocomplete instead of SearchBox
         const inputElement = searchInputRef.current;
         if (!inputElement) {
           console.error("Search input element not found for Autocomplete.");
@@ -56,11 +63,12 @@ const Home = () => {
         }
 
         const autocomplete = new google.maps.places.Autocomplete(inputElement, {
-          types: ['geocode', 'establishment'], // Restrict predictions to addresses and businesses
+          types: ['geocode', 'establishment'],
           fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'types'],
+          componentRestrictions: { country: [] } // Remove country restrictions for global search
         });
 
-        autocomplete.bindTo('bounds', mapInstance); // Prefer results near the map's current view
+        autocomplete.bindTo('bounds', mapInstance);
 
         autocomplete.addListener('place_changed', () => {
           // Clear existing markers before adding new ones
@@ -142,7 +150,7 @@ const Home = () => {
       activeMarkers.forEach(marker => marker.setMap(null));
     };
 
-  }, []);
+  }, []); // Remove activeMarkers dependency to prevent infinite loop
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -152,62 +160,68 @@ const Home = () => {
       activeMarkers.forEach(marker => marker.setMap(null));
       setActiveMarkers([]);
 
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ address: searchQuery }, (results, status) => {
-        if (status === 'OK' && results && results.length > 0) {
-          const place = results[0];
-          if (!place.geometry || !place.geometry.location) {
-            setError("No details available for search query: '" + searchQuery + "'");
-            setLoading(false);
-            return;
-          }
+      try {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: searchQuery }, (results, status) => {
+          if (status === 'OK' && results && results.length > 0) {
+            const place = results[0];
+            if (!place.geometry || !place.geometry.location) {
+              setError("No details available for search query: '" + searchQuery + "'");
+              setLoading(false);
+              return;
+            }
 
-          if (place.geometry.viewport) {
-            map.fitBounds(place.geometry.viewport);
+            if (place.geometry.viewport) {
+              map.fitBounds(place.geometry.viewport);
+            } else {
+              map.setCenter(place.geometry.location);
+              map.setZoom(17);
+            }
+
+            const marker = new window.google.maps.Marker({
+              map: map,
+              title: place.formatted_address,
+              position: place.geometry.location,
+              animation: window.google.maps.Animation.DROP
+            });
+            setActiveMarkers([marker]);
+
+            const infoWindow = new window.google.maps.InfoWindow({
+              content: `
+                <div style="padding: 10px; max-width: 300px;">
+                  <h3 style="margin: 0 0 10px 0; color: #333;">${place.formatted_address}</h3>
+                  ${place.place_id ? `<p style="margin: 5px 0; color: #888; font-size: 12px;">Place ID: ${place.place_id}</p>` : ''}
+                  <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.formatted_address)}&query_place_id=${place.place_id || ''}', '_blank')" style="background: #667eea; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px;">View on Google Maps</button>
+                </div>
+              `
+            });
+            marker.addListener('click', () => {
+              infoWindow.open(map, marker);
+            });
+
+            const newResult = {
+              name: place.formatted_address,
+              address: place.formatted_address,
+              location: place.geometry.location,
+              place_id: place.place_id,
+              marker: marker,
+              infoWindow: infoWindow
+            };
+            setSearchResults([newResult]);
+            setSelectedLocation(newResult);
+
           } else {
-            map.setCenter(place.geometry.location);
-            map.setZoom(17);
+            setError(`Geocoding failed for "${searchQuery}" with status: ${status}`);
+            setSearchResults([]);
+            setSelectedLocation(null);
           }
-
-          const marker = new window.google.maps.Marker({
-            map: map,
-            title: place.formatted_address,
-            position: place.geometry.location,
-            animation: window.google.maps.Animation.DROP
-          });
-          setActiveMarkers([marker]);
-
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: `
-              <div style="padding: 10px; max-width: 300px;">
-                <h3 style="margin: 0 0 10px 0; color: #333;">${place.formatted_address}</h3>
-                ${place.place_id ? `<p style="margin: 5px 0; color: #888; font-size: 12px;">Place ID: ${place.place_id}</p>` : ''}
-                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.formatted_address)}&query_place_id=${place.place_id || ''}', '_blank')" style="background: #667eea; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 8px;">View on Google Maps</button>
-              </div>
-            `
-          });
-          marker.addListener('click', () => {
-            infoWindow.open(map, marker);
-          });
-
-          const newResult = {
-            name: place.formatted_address,
-            address: place.formatted_address,
-            location: place.geometry.location,
-            place_id: place.place_id,
-            marker: marker,
-            infoWindow: infoWindow
-          };
-          setSearchResults([newResult]);
-          setSelectedLocation(newResult);
-
-        } else {
-          setError(`Geocoding failed for "${searchQuery}" with status: ${status}`);
-          setSearchResults([]);
-          setSelectedLocation(null);
-        }
+          setLoading(false);
+        });
+      } catch (err) {
+        console.error('Geocoding error:', err);
+        setError('Failed to search for location. Please try again.');
         setLoading(false);
-      });
+      }
     }
   };
 
@@ -222,6 +236,12 @@ const Home = () => {
       map.setCenter({ lat: 21.0285, lng: 105.8542 });
       map.setZoom(10);
     }
+  };
+
+  const handleMapCreationSuccess = () => {
+    setShowCreateMapForm(false); // Close the form
+    // Optional: Add a success message or redirect the user
+    // navigate('/my-maps'); // If you want to go to My Maps after creation
   };
 
   return (
@@ -276,6 +296,17 @@ const Home = () => {
         <div ref={mapRef} className="google-map"></div>
       </div>
 
+      {/* Conditionally render MapCreationForm as an overlay or within the section */}
+      {showCreateMapForm && (
+        <div className="create-map-overlay"> {/* Add styling for overlay */}
+          <MapCreationForm
+            mapInstance={map} // Pass the map instance to the form
+            onSuccess={handleMapCreationSuccess} // Callback on success
+            onCancel={() => setShowCreateMapForm(false)} // Callback to close form on cancel
+          />
+        </div>
+      )}
+
       {searchResults.length > 0 && (
         <div className="search-results">
           <h3>Search Results ({searchResults.length})</h3>
@@ -327,7 +358,11 @@ const Home = () => {
           </div>
           <div className="feature-card">
             <h3>🗺️ Create Maps</h3>
-            <p>Build interactive maps with your own stories and markers</p>
+            <p>Build interactive maps with your own stories and markers.</p>
+            {/* Button to show the MapCreationForm */}
+            <button onClick={() => setShowCreateMapForm(true)} className="action-button">
+              Start Creating
+            </button>
           </div>
           <div className="feature-card">
             <h3>📖 Share Stories</h3>
