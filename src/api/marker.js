@@ -13,6 +13,8 @@ const { authRequired } = require('./middleware/auth');
 markersRouter.get('/:mapId', async (req, res, next) => {
   try {
     const mapId = req.params.mapId;
+    const searchTerm = req.query.search; 
+
     const map = await getMapById(mapId);
     if (!map) {
       return res.status(404).send({ message: 'Map not found.' });
@@ -22,13 +24,12 @@ markersRouter.get('/:mapId', async (req, res, next) => {
       return res.status(403).send({ message: 'Access denied to markers of a private map.' });
     }
 
-    const markers = await fetchMarkers(mapId);
+    const markers = await fetchMarkers(mapId, searchTerm); 
     res.send(markers);
   } catch (error) {
     next(error);
   }
 });
-
 
 markersRouter.get('/single/:id', async (req, res, next) => {
   try {

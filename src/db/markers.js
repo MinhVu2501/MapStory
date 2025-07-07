@@ -14,19 +14,27 @@ const createMarker = async ({ mapId, name, description, latitude, longitude, ima
   }
 };
 
-const fetchMarkers = async (mapId) => {
+const fetchMarkers = async (mapId, searchTerm = null) => { 
   try {
-    const { rows } = await client.query(`
-      SELECT id, map_id, name, description, latitude, longitude, image_url, order_index, created_at, updated_at
-      FROM markers WHERE map_id = $1 ORDER BY order_index ASC, created_at ASC;
-    `, [mapId]);
+    let queryText = `SELECT id, map_id, name, description, latitude, longitude, image_url, order_index, created_at, updated_at FROM markers WHERE map_id = $1`;
+    let queryParams = [mapId];
+    let paramIndex = 2; 
+
+
+    if (searchTerm) {
+      queryText += ` AND (name ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`;
+      queryParams.push(`%${searchTerm}%`); 
+    }
+
+    queryText += ` ORDER BY order_index ASC, created_at ASC;`; 
+
+    const { rows } = await client.query(queryText, queryParams);
     return rows;
   } catch (error) {
     console.error('Error in fetchMarkers:', error);
     throw new Error('Error fetching markers: ' + error.message);
   }
 };
-
 
 const getMarkerById = async (markerId) => {
   try {
