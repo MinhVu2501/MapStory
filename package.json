@@ -9,8 +9,10 @@
     "preview": "vite preview",
     "start": "NODE_ENV=production node server.js",
     "start:dev": "nodemon server.js",
+    "init-db": "node init-db.js",
     "seed:dev": "node ./seed.js",
     "seed:prod": "NODE_ENV=production node ./seed.js",
+    "seed:production": "node seed-production.js",
     "deploy": "npm run build && npm run start",
     "heroku-postbuild": "npm run build",
     "render-build": "./render-build.sh"
