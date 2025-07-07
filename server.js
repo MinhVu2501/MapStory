@@ -107,7 +107,12 @@ app.use((err, req, res, next) => {
 
 const startServer = async () => {
   // Create a fresh client instance for the server
-  const client = new Client(process.env.DATABASE_URL);
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('render.com') 
+      ? { rejectUnauthorized: false } 
+      : false
+  });
   
   try {
     // Initialize database schema in production first, before connecting main client

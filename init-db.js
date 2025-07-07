@@ -3,7 +3,12 @@ const { Client } = require('pg');
 
 const initializeDatabase = async () => {
   // Create a new client instance for initialization
-  const client = new Client(process.env.DATABASE_URL);
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('render.com') 
+      ? { rejectUnauthorized: false } 
+      : false
+  });
   
   try {
     console.log('🔄 Connecting to database...');
