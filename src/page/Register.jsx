@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from '../config/api';
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -22,7 +23,7 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/users/register', {
+      const response = await fetch(buildApiUrl('/api/users/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import { buildApiUrl, API_BASE_URL } from '../config/api';
 
 const MapView = () => {
   const { id } = useParams();
@@ -58,7 +59,7 @@ const MapView = () => {
   const fetchMapData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/maps/${id}`);
+      const response = await fetch(buildApiUrl(`/api/maps/${id}`));
       
       if (!response.ok) {
         throw new Error('Map not found');
@@ -85,7 +86,7 @@ const MapView = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:3001/api/maps/${id}/like-status`, {
+      const response = await fetch(buildApiUrl(`/api/maps/${id}/like-status`), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -151,7 +152,7 @@ const MapView = () => {
             map: mapInstance,
             title: marker.name,
             icon: {
-              url: marker.image_url ? `http://localhost:3001${marker.image_url}` : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSIjRkY2QjM1Ii8+Cjwvc3ZnPgo=',
+              url: marker.image_url ? `${API_BASE_URL}${marker.image_url}` : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSIjRkY2QjM1Ii8+Cjwvc3ZnPgo=',
               scaledSize: new google.maps.Size(40, 40),
               anchor: new google.maps.Point(20, 40)
             }
@@ -163,7 +164,7 @@ const MapView = () => {
                 <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">${marker.name}</h3>
                 <p style="margin: 8px 0; color: #666; line-height: 1.4;">${marker.description || ''}</p>
                 ${marker.image_url ? `
-                  <img src="http://localhost:3001${marker.image_url}" 
+                  <img src="${API_BASE_URL}${marker.image_url}" 
                        alt="${marker.name}" 
                        style="width: 100%; max-width: 250px; height: auto; border-radius: 8px; margin-top: 10px;" />
                 ` : ''}
@@ -328,7 +329,7 @@ const MapView = () => {
     setIsLiking(true);
     try {
       const method = isLiked ? 'DELETE' : 'POST';
-      const response = await fetch(`http://localhost:3001/api/maps/${id}/like`, {
+      const response = await fetch(buildApiUrl(`/api/maps/${id}/like`), {
         method: method,
         headers: {
           'Content-Type': 'application/json',
@@ -516,7 +517,7 @@ const MapView = () => {
               <div key={index} className="marker-card">
                 {marker.image_url && (
                   <img 
-                    src={`http://localhost:3001${marker.image_url}`} 
+                    src={`${API_BASE_URL}${marker.image_url}`} 
                     alt={marker.name}
                     className="marker-image"
                   />

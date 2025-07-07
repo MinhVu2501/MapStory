@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from '../config/api';
 
 const MyMapsPage = () => {
   const [maps, setMaps] = useState([]);
@@ -23,7 +24,7 @@ const MyMapsPage = () => {
           return;
         }
 
-        const response = await fetch(`http://localhost:3001/api/maps?userId=${user.id}`, {
+        const response = await fetch(buildApiUrl(`/api/maps?userId=${user.id}`), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

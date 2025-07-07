@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from '../config/api';
 
 const LoginPage = () => {
   const [login, setLogin] = useState('');
@@ -15,7 +16,7 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/users/login', {
+      const response = await fetch(buildApiUrl('/api/users/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

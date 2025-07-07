@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { buildApiUrl } from '../config/api';
 
 const CommunityLibrary = () => {
   const [maps, setMaps] = useState([]);
@@ -27,7 +28,7 @@ const CommunityLibrary = () => {
   const fetchCommunityMaps = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/maps/public-stories?limit=20&category=${selectedCategory}&sort=${sortBy}`);
+      const response = await fetch(buildApiUrl(`/api/maps/public-stories?limit=20&category=${selectedCategory}&sort=${sortBy}`));
       
       if (!response.ok) {
         throw new Error('Failed to fetch community maps');
@@ -70,7 +71,7 @@ const CommunityLibrary = () => {
     
     setIsLiking(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/maps/${mapId}/like`, {
+      const response = await fetch(buildApiUrl(`/api/maps/${mapId}/like`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

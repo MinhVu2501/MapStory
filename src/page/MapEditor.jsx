@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import { buildApiUrl } from '../config/api';
 
 const MapEditor = () => {
   const [map, setMap] = useState(null);
@@ -252,7 +253,7 @@ const MapEditor = () => {
         }))
       };
 
-      const response = await fetch('http://localhost:3001/api/maps', {
+      const response = await fetch(buildApiUrl('/api/maps'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
