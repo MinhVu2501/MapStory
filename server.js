@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const client = require('./client');
+const { Client } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -106,18 +106,14 @@ app.use((err, req, res, next) => {
 });
 
 const startServer = async () => {
+  // Create a fresh client instance for the server
+  const client = new Client(process.env.DATABASE_URL);
+  
   try {
-    console.log('Attempting to connect to the database...');
-    await client.connect();
-    console.log('Successfully connected to the database!');
-
-    // Initialize database schema in production
+    // Initialize database schema in production first, before connecting main client
     if (process.env.NODE_ENV === 'production') {
       console.log('🔄 Initializing database schema for production...');
       try {
-        // Close the current connection before initialization
-        await client.end();
-        
         // Initialize database schema (uses its own client)
         const { initializeDatabase } = require('./init-db');
         await initializeDatabase();
@@ -133,13 +129,25 @@ const startServer = async () => {
         // Continue anyway in case tables already exist
       }
       
-      // Create a fresh connection for the server
-      console.log('🔄 Reconnecting to database for server...');
-      // Small delay to ensure previous connections are fully closed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await client.connect();
-      console.log('✅ Server database connection established!');
+      // Small delay to ensure all connections are fully closed
+      console.log('⏱️  Waiting for connections to close...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
+
+    // Now connect the main server client
+    console.log('Attempting to connect to the database...');
+    await client.connect();
+    console.log('Successfully connected to the database!');
+
+    // Inject the client into all database modules
+    const { setClient: setMapsClient } = require('./src/db/maps');
+    const { setClient: setMarkersClient } = require('./src/db/markers');
+    const { setClient: setUsersClient } = require('./users');
+    
+    setMapsClient(client);
+    setMarkersClient(client);
+    setUsersClient(client);
+    console.log('✅ Database client injected into all modules');
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

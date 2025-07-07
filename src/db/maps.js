@@ -1,4 +1,5 @@
-const client = require('../../client');
+// Client will be injected by the server
+let client;
 
 const createMap = async ({ userId, title, description, isPublic = true, centerLat, centerLng, zoomLevel, thumbnailUrl }) => {
   try {
@@ -281,9 +282,15 @@ const hasUserLikedMap = async (mapId, userId) => {
   }
 };
 
+// Function to set the client instance
+const setClient = (clientInstance) => {
+  client = clientInstance;
+};
+
 module.exports = {
+  setClient,
   createMap,
-  fetchMaps, 
+  fetchMaps,
   getMapById,
   updateMap,
   deleteMap,
