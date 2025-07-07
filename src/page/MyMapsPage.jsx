@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { buildApiUrl } from '../config/api';
 
 const MyMapsPage = () => {
   const [maps, setMaps] = useState([]);
