@@ -1,4 +1,5 @@
-const client = require('./client');
+// Client will be injected by the server
+let client;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -120,7 +121,13 @@ const deleteUser = async (userId) => {
   }
 };
 
+// Function to set the client instance
+const setClient = (clientInstance) => {
+  client = clientInstance;
+};
+
 module.exports = {
+  setClient,
   createUser,
   loginUser,
   validateUser,

@@ -1,4 +1,5 @@
-const client = require('../../client'); 
+// Client will be injected by the server
+let client; 
 
 const createMarker = async ({ mapId, name, description, latitude, longitude, imageUrl, orderIndex = 0 }) => {
   try {
@@ -92,7 +93,13 @@ const deleteMarker = async (markerId) => {
   }
 };
 
+// Function to set the client instance
+const setClient = (clientInstance) => {
+  client = clientInstance;
+};
+
 module.exports = {
+  setClient,
   createMarker,
   fetchMarkers,
   getMarkerById,
