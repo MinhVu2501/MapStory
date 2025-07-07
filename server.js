@@ -4,6 +4,7 @@ const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const path = require('path'); 
 const client = require('./client');
 
 const PORT = process.env.PORT || 3000;
@@ -41,14 +42,17 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.get('/', (req, res) => {
-  res.setHeader('X-Custom-Test-Header', 'MapStory-API-Works');
-  res.send('Welcome to the MapStory Creator API!');
-});
 
 app.use('/api/users', require('./src/api/users'));
 app.use('/api/maps', require('./src/api/maps'));
 app.use('/api/markers', require('./src/api/marker'));
+
+
+app.use(express.static(path.join(__dirname, 'dist')));
+
+app.get('/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 
 app.use((error, req, res, next) => {

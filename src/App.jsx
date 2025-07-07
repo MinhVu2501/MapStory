@@ -1,24 +1,25 @@
-// mapstory-frontend/src/App.jsx
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Navbar from './page/Navbar'; // <--- CORRECTED: Navbar is in the page directory
-import Home from './page/Home'; // <--- CORRECTED: Home is in the page directory
-import './index.css'; // <--- CORRECTED: Use the existing index.css file
+import Navbar from './page/Navbar';
+import Home from './page/Home';
+import LoginPage from './page/Login';
+import RegisterPage from './page/Register';
+import './index.css';
 
 function App() {
   return (
     <div className="App">
-      <Navbar /> {/* <--- NEW: Render the Navbar component here */}
+      <Navbar />
       
-      <main> {/* Optional: Wrap your Routes in a <main> tag for semantics */}
+      <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          {/* You'll add more routes here later */}
+          <Route path="/login" element={<LoginPage />} />       
+          <Route path="/register" element={<RegisterPage />} /> 
+          
+          <Route path="*" element={<h2>404 Not Found</h2>} /> 
         </Routes>
       </main>
-
-      {/* You can add a global footer here later */}
     </div>
   );
 }
