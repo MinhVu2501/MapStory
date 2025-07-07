@@ -1,8 +1,11 @@
 require('dotenv').config();
-const client = require('./client');
+const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const seedProductionData = async () => {
+  // Create a new client instance for seeding
+  const client = new Client(process.env.DATABASE_URL);
+  
   try {
     console.log('🌱 Starting production data seeding...');
     await client.connect();

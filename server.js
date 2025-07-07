@@ -115,22 +115,30 @@ const startServer = async () => {
     if (process.env.NODE_ENV === 'production') {
       console.log('🔄 Initializing database schema for production...');
       try {
-        const { initializeDatabase } = require('./init-db');
-        await client.end(); // Close the current connection
-        await initializeDatabase(); // This will handle its own connection
+        // Close the current connection before initialization
+        await client.end();
         
-        // Seed sample data
+        // Initialize database schema (uses its own client)
+        const { initializeDatabase } = require('./init-db');
+        await initializeDatabase();
+        
+        // Seed sample data (uses its own client)
         console.log('🌱 Seeding sample data...');
         const { seedProductionData } = require('./seed-production');
-        await seedProductionData(); // This will handle its own connection
+        await seedProductionData();
         
-        await client.connect(); // Reconnect for the server
         console.log('✅ Database schema and sample data initialized successfully!');
       } catch (dbError) {
         console.error('⚠️  Database initialization failed, but continuing:', dbError.message);
         // Continue anyway in case tables already exist
-        await client.connect(); // Make sure we still have a connection
       }
+      
+      // Create a fresh connection for the server
+      console.log('🔄 Reconnecting to database for server...');
+      // Small delay to ensure previous connections are fully closed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await client.connect();
+      console.log('✅ Server database connection established!');
     }
 
     app.listen(PORT, () => {
