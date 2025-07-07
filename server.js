@@ -3,32 +3,57 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
-const client = require('./client'); 
+const helmet = require('helmet');
+const client = require('./client');
 
 const PORT = process.env.PORT || 3000;
 
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+
 app.use((req, res, next) => {
-  console.log(`[DEBUG] Incoming request: ${req.method} ${req.url}`);
-  next(); 
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Download-Options', 'noopen');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-XSS-Protection', '0');
+  next();
 });
 
-app.use(cors()); 
-app.use(express.json()); 
-app.use(morgan('dev')); 
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Incoming request: ${req.method} ${req.url}`);
+  next();
+});
 
+app.use(cors());
+app.use(express.json());
+app.use(morgan('dev'));
 
 app.get('/', (req, res) => {
+  res.setHeader('X-Custom-Test-Header', 'MapStory-API-Works');
   res.send('Welcome to the MapStory Creator API!');
 });
 
-app.use('/api/users', require('./src/api/users'));       
-app.use('/api/maps', require('./src/api/maps'));         
-app.use('/api/markers', require('./src/api/marker'));   
+app.use('/api/users', require('./src/api/users'));
+app.use('/api/maps', require('./src/api/maps'));
+app.use('/api/markers', require('./src/api/marker'));
 
 
 app.use((error, req, res, next) => {
-  console.error('SERVER ERROR:', error); 
-  res.status(error.status || 500); 
+  console.error('SERVER ERROR:', error);
+  res.status(error.status || 500);
   res.send({
     name: error.name || 'ServerError',
     message: error.message || 'An unexpected error occurred.',
@@ -38,7 +63,7 @@ app.use((error, req, res, next) => {
 const startServer = async () => {
   try {
     console.log('Attempting to connect to the database...');
-    await client.connect(); 
+    await client.connect();
     console.log('Successfully connected to the database!');
 
     app.listen(PORT, () => {
@@ -46,9 +71,9 @@ const startServer = async () => {
     });
   } catch (error) {
     console.error('Failed to connect to the database or start server:', error);
-    
+
     process.exit(1);
   }
 };
 
-startServer(); 
+startServer();

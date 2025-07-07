@@ -1,4 +1,5 @@
-const client = require('../../client'); 
+const client = require('../../client');
+
 const createMap = async ({ userId, title, description, isPublic = true, centerLat, centerLng, zoomLevel, thumbnailUrl }) => {
   try {
     const { rows } = await client.query(`
@@ -13,17 +14,34 @@ const createMap = async ({ userId, title, description, isPublic = true, centerLa
   }
 };
 
-const fetchMaps = async (userId = null) => {
+const fetchMaps = async (userId = null, searchTerm = null) => {
   try {
     let queryText = `SELECT id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, created_at, updated_at FROM maps`;
     let queryParams = [];
+    const conditions = [];
+    let paramIndex = 1;
 
+   
     if (userId) {
-      queryText += ` WHERE user_id = $1`;
+      conditions.push(`user_id = $${paramIndex}`);
       queryParams.push(userId);
+      paramIndex++;
     } else {
-      queryText += ` WHERE is_public = TRUE`;
+      
+      conditions.push(`is_public = TRUE`);
     }
+
+    if (searchTerm) {
+
+      conditions.push(`(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
+      queryParams.push(`%${searchTerm}%`); 
+      paramIndex++;
+    }
+
+    if (conditions.length > 0) {
+      queryText += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
     queryText += ` ORDER BY created_at DESC;`; 
 
     const { rows } = await client.query(queryText, queryParams);
@@ -33,7 +51,6 @@ const fetchMaps = async (userId = null) => {
     throw new Error('Error fetching maps: ' + error.message);
   }
 };
-
 
 const getMapById = async (mapId) => {
   try {
@@ -47,7 +64,6 @@ const getMapById = async (mapId) => {
     throw new Error('Error fetching map by ID: ' + error.message);
   }
 };
-
 
 const updateMap = async (mapId, updates) => {
   try {
@@ -94,7 +110,7 @@ const deleteMap = async (mapId) => {
 
 module.exports = {
   createMap,
-  fetchMaps,
+  fetchMaps, 
   getMapById,
   updateMap,
   deleteMap
