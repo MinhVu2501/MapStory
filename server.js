@@ -14,8 +14,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      scriptSrc: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+      scriptSrcElem: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+      connectSrc: ["'self'", "https://maps.googleapis.com"],
     },
   },
   crossOriginEmbedderPolicy: false,

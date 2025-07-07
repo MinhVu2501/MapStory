@@ -4,6 +4,7 @@ import Navbar from './page/Navbar';
 import Home from './page/Home';
 import LoginPage from './page/Login';
 import RegisterPage from './page/Register';
+import MyMapsPage from './page/MyMapsPage';
 import './index.css';
 
 function App() {
@@ -16,7 +17,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />       
           <Route path="/register" element={<RegisterPage />} /> 
-          
+          <Route path="/my-maps" element={<MyMapsPage />} />
           <Route path="*" element={<h2>404 Not Found</h2>} /> 
         </Routes>
       </main>

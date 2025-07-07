@@ -12,6 +12,7 @@
     "seed:dev": "node ./seed.js"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^1.16.10",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
