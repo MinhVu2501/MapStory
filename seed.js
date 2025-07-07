@@ -64,6 +64,8 @@ const createTables = async () => {
         center_lng DECIMAL(11, 8) NOT NULL,
         zoom_level INT NOT NULL,
         thumbnail_url VARCHAR(255),
+        views INT DEFAULT 0 NOT NULL,
+        likes INT DEFAULT 0 NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -79,6 +81,14 @@ const createTables = async () => {
         order_index INT DEFAULT 0 NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE user_likes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        map_id UUID NOT NULL REFERENCES maps(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, map_id)
       );
 
       CREATE OR REPLACE FUNCTION update_updated_at_column()

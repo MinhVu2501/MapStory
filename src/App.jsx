@@ -7,6 +7,8 @@ import RegisterPage from './page/Register';
 import MyMapsPage from './page/MyMapsPage';
 import ExploreLocations from './page/ExploreLocations';
 import MapView from './page/MapView';
+import CommunityLibrary from './page/CommunityLibrary';
+import MapEditor from './page/MapEditor';
 import './index.css';
 
 function App() {
@@ -18,6 +20,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explore" element={<ExploreLocations />} />
+          <Route path="/community" element={<CommunityLibrary />} />
+          <Route path="/editor" element={<MapEditor />} />
           <Route path="/login" element={<LoginPage />} />       
           <Route path="/register" element={<RegisterPage />} /> 
           <Route path="/my-maps" element={<MyMapsPage />} />

@@ -3,10 +3,10 @@ const client = require('../../client');
 const createMap = async ({ userId, title, description, isPublic = true, centerLat, centerLng, zoomLevel, thumbnailUrl }) => {
   try {
     const { rows } = await client.query(`
-      INSERT INTO maps (user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, created_at, updated_at;
-    `, [userId, title, description, isPublic, centerLat, centerLng, zoomLevel, thumbnailUrl]);
+      INSERT INTO maps (user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, views, likes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, views, likes, created_at, updated_at;
+    `, [userId, title, description, isPublic, centerLat, centerLng, zoomLevel, thumbnailUrl, 0, 0]);
     return rows[0];
   } catch (error) {
     console.error('Error in createMap:', error);
@@ -18,7 +18,7 @@ const fetchMaps = async (userId = null, searchTerm = null, publicOnly = false, l
   try {
     let queryText = `
       SELECT m.id, m.user_id, m.title, m.description, m.is_public, m.center_lat, m.center_lng, 
-             m.zoom_level, m.thumbnail_url, m.created_at, m.updated_at,
+             m.zoom_level, m.thumbnail_url, m.views, m.likes, m.created_at, m.updated_at,
              u.username as author_name
       FROM maps m 
       LEFT JOIN users u ON m.user_id = u.id
@@ -81,7 +81,7 @@ const fetchMaps = async (userId = null, searchTerm = null, publicOnly = false, l
 const getMapById = async (mapId) => {
   try {
     const { rows } = await client.query(`
-      SELECT id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, created_at, updated_at
+      SELECT id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, views, likes, created_at, updated_at
       FROM maps WHERE id = $1;
     `, [mapId]);
     
@@ -128,7 +128,7 @@ const updateMap = async (mapId, updates) => {
       UPDATE maps
       SET ${setClauses.join(', ')}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
-      RETURNING id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, created_at, updated_at;
+      RETURNING id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, views, likes, created_at, updated_at;
     `;
 
     const { rows } = await client.query(queryText, queryParams);
@@ -149,10 +149,148 @@ const deleteMap = async (mapId) => {
   }
 };
 
+const incrementViews = async (mapId) => {
+  try {
+    const { rows } = await client.query(`
+      UPDATE maps 
+      SET views = views + 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING views;
+    `, [mapId]);
+    return rows[0];
+  } catch (error) {
+    console.error('Error in incrementViews:', error);
+    throw new Error('Error incrementing views: ' + error.message);
+  }
+};
+
+const incrementLikes = async (mapId) => {
+  try {
+    const { rows } = await client.query(`
+      UPDATE maps 
+      SET likes = likes + 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING likes;
+    `, [mapId]);
+    return rows[0];
+  } catch (error) {
+    console.error('Error in incrementLikes:', error);
+    throw new Error('Error incrementing likes: ' + error.message);
+  }
+};
+
+const decrementLikes = async (mapId) => {
+  try {
+    const { rows } = await client.query(`
+      UPDATE maps 
+      SET likes = GREATEST(likes - 1, 0), updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING likes;
+    `, [mapId]);
+    return rows[0];
+  } catch (error) {
+    console.error('Error in decrementLikes:', error);
+    throw new Error('Error decrementing likes: ' + error.message);
+  }
+};
+
+const likeMap = async (mapId, userId) => {
+  try {
+    // Check if user has already liked this map
+    const existingLike = await client.query(`
+      SELECT id FROM user_likes WHERE user_id = $1 AND map_id = $2;
+    `, [userId, mapId]);
+
+    if (existingLike.rows.length > 0) {
+      throw new Error('User has already liked this map');
+    }
+
+    // Start transaction
+    await client.query('BEGIN');
+
+    // Add user like record
+    await client.query(`
+      INSERT INTO user_likes (user_id, map_id) VALUES ($1, $2);
+    `, [userId, mapId]);
+
+    // Increment likes count
+    const { rows } = await client.query(`
+      UPDATE maps 
+      SET likes = likes + 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING likes;
+    `, [mapId]);
+
+    await client.query('COMMIT');
+    return rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error in likeMap:', error);
+    throw new Error('Error liking map: ' + error.message);
+  }
+};
+
+const unlikeMap = async (mapId, userId) => {
+  try {
+    // Check if user has liked this map
+    const existingLike = await client.query(`
+      SELECT id FROM user_likes WHERE user_id = $1 AND map_id = $2;
+    `, [userId, mapId]);
+
+    if (existingLike.rows.length === 0) {
+      throw new Error('User has not liked this map');
+    }
+
+    // Start transaction
+    await client.query('BEGIN');
+
+    // Remove user like record
+    await client.query(`
+      DELETE FROM user_likes WHERE user_id = $1 AND map_id = $2;
+    `, [userId, mapId]);
+
+    // Decrement likes count
+    const { rows } = await client.query(`
+      UPDATE maps 
+      SET likes = GREATEST(likes - 1, 0), updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING likes;
+    `, [mapId]);
+
+    await client.query('COMMIT');
+    return rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error in unlikeMap:', error);
+    throw new Error('Error unliking map: ' + error.message);
+  }
+};
+
+const hasUserLikedMap = async (mapId, userId) => {
+  try {
+    if (!userId) return false;
+    
+    const { rows } = await client.query(`
+      SELECT id FROM user_likes WHERE user_id = $1 AND map_id = $2;
+    `, [userId, mapId]);
+    
+    return rows.length > 0;
+  } catch (error) {
+    console.error('Error in hasUserLikedMap:', error);
+    return false;
+  }
+};
+
 module.exports = {
   createMap,
   fetchMaps, 
   getMapById,
   updateMap,
-  deleteMap
+  deleteMap,
+  incrementViews,
+  incrementLikes,
+  decrementLikes,
+  likeMap,
+  unlikeMap,
+  hasUserLikedMap
 };

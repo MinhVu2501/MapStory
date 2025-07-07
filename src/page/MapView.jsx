@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Loader } from '@googlemaps/js-api-loader';
+import { loadGoogleMaps } from '../utils/googleMapsLoader';
 
 const MapView = () => {
   const { id } = useParams();
@@ -11,7 +11,13 @@ const MapView = () => {
   const [showRoute, setShowRoute] = useState(false);
   const [directionsRenderer, setDirectionsRenderer] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
+  const [isRoutePanelMinimized, setIsRoutePanelMinimized] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
   const mapRef = useRef(null);
+  const routePanelRef = useRef(null);
+  const currentInfoWindowRef = useRef(null);
 
   useEffect(() => {
     fetchMapData();
@@ -19,9 +25,35 @@ const MapView = () => {
 
   useEffect(() => {
     if (mapData) {
-      initializeMap();
+      // Add a small delay to ensure DOM is ready
+      setTimeout(() => {
+        initializeMap();
+      }, 100);
     }
   }, [mapData]);
+
+  // Handle click outside to close route panel
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showRoute && routePanelRef.current && !routePanelRef.current.contains(event.target)) {
+        // Don't close if clicking on the route button itself
+        if (!event.target.closest('.route-btn')) {
+          setShowRoute(false);
+          setRouteInfo(null);
+          if (directionsRenderer) {
+            directionsRenderer.setMap(null);
+          }
+        }
+      }
+    };
+
+    if (showRoute) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showRoute, directionsRenderer]);
 
   const fetchMapData = async () => {
     try {
@@ -34,6 +66,10 @@ const MapView = () => {
       
       const data = await response.json();
       setMapData(data);
+      setLikeCount(data.likes || 0);
+      
+      // Check if user has liked this map (if user is logged in)
+      await checkLikeStatus();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -41,25 +77,39 @@ const MapView = () => {
     }
   };
 
-  const initializeMap = async () => {
+  const checkLikeStatus = async () => {
     try {
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      console.log('API Key loaded:', apiKey ? 'Yes' : 'No');
-      console.log('API Key value:', apiKey);
-      
-      if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
-        throw new Error('Google Maps API key is not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file.');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setIsLiked(false);
+        return;
       }
 
-      const loader = new Loader({
-        apiKey: apiKey,
-        version: 'weekly',
-        libraries: ['places', 'drawing', 'geometry', 'routes'],
-        region: 'US',
-        language: 'en'
+      const response = await fetch(`http://localhost:3001/api/maps/${id}/like-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
-      const google = await loader.load();
+      if (response.ok) {
+        const data = await response.json();
+        setIsLiked(data.isLiked);
+      }
+    } catch (err) {
+      console.error('Error checking like status:', err);
+      setIsLiked(false);
+    }
+  };
+
+  const initializeMap = async () => {
+    try {
+      if (!mapRef.current) {
+        console.error('Map container element not found');
+        setError('Map container not available');
+        return;
+      }
+
+      const google = await loadGoogleMaps();
       
       const mapInstance = new google.maps.Map(mapRef.current, {
         center: { 
@@ -99,7 +149,7 @@ const MapView = () => {
               lng: parseFloat(marker.longitude) 
             },
             map: mapInstance,
-            title: marker.title,
+            title: marker.name,
             icon: {
               url: marker.image_url ? `http://localhost:3001${marker.image_url}` : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSIjRkY2QjM1Ii8+Cjwvc3ZnPgo=',
               scaledSize: new google.maps.Size(40, 40),
@@ -109,12 +159,12 @@ const MapView = () => {
 
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 15px; max-width: 300px;">
-                <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">${marker.title}</h3>
-                <p style="margin: 8px 0; color: #666; line-height: 1.4;">${marker.description}</p>
+              <div style="padding: 15px; max-width: 300px; background: rgba(255, 255, 255, 0.9); border-radius: 10px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
+                <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">${marker.name}</h3>
+                <p style="margin: 8px 0; color: #666; line-height: 1.4;">${marker.description || ''}</p>
                 ${marker.image_url ? `
                   <img src="http://localhost:3001${marker.image_url}" 
-                       alt="${marker.title}" 
+                       alt="${marker.name}" 
                        style="width: 100%; max-width: 250px; height: auto; border-radius: 8px; margin-top: 10px;" />
                 ` : ''}
               </div>
@@ -122,7 +172,14 @@ const MapView = () => {
           });
 
           markerInstance.addListener('click', () => {
+            // Close any currently open info window
+            if (currentInfoWindowRef.current) {
+              currentInfoWindowRef.current.close();
+            }
+            
+            // Open the new info window and track it
             infoWindow.open(mapInstance, markerInstance);
+            currentInfoWindowRef.current = infoWindow;
           });
         });
       }
@@ -155,8 +212,7 @@ const MapView = () => {
     // Sort markers according to tour order
     const sortedMarkers = tourOrder.map(name => 
       mapData.markers.find(marker => 
-        marker.name.toLowerCase().includes(name.toLowerCase()) ||
-        marker.title?.toLowerCase().includes(name.toLowerCase())
+        marker.name.toLowerCase().includes(name.toLowerCase())
       )
     ).filter(Boolean);
 
@@ -212,8 +268,8 @@ const MapView = () => {
         totalDuration += leg.duration.value;
         
         // Add step information
-        const fromLocation = legIndex === 0 ? sortedMarkers[0].title : sortedMarkers[legIndex].title;
-        const toLocation = sortedMarkers[legIndex + 1].title;
+        const fromLocation = legIndex === 0 ? sortedMarkers[0].name : sortedMarkers[legIndex].name;
+        const toLocation = sortedMarkers[legIndex + 1].name;
         
         routeSteps.push({
           step: legIndex + 1,
@@ -231,7 +287,7 @@ const MapView = () => {
         steps: routeSteps,
         locations: sortedMarkers.map((marker, index) => ({
           order: index + 1,
-          name: marker.title,
+          name: marker.name,
           description: marker.description
         }))
       };
@@ -256,6 +312,43 @@ const MapView = () => {
       // Show route
       createFoodTourRoute();
       setShowRoute(true);
+    }
+  };
+
+  const handleLikeToggle = async () => {
+    if (isLiking) return;
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to like maps!');
+      return;
+    }
+    
+    setIsLiking(true);
+    try {
+      const method = isLiked ? 'DELETE' : 'POST';
+      const response = await fetch(`http://localhost:3001/api/maps/${id}/like`, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update like status');
+      }
+      
+      const data = await response.json();
+      setLikeCount(data.likes);
+      setIsLiked(data.isLiked);
+    } catch (err) {
+      console.error('Error updating like status:', err);
+      alert(err.message || 'Failed to update like status');
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -292,8 +385,28 @@ const MapView = () => {
               {new Date(mapData.created_at).toLocaleDateString()}
             </span>
           </div>
+          <div className="map-stats">
+            <span className="stat-item">
+              <span className="stat-icon">👁️</span>
+              <span className="stat-value">{mapData.views || 0}</span>
+              <span className="stat-label">views</span>
+            </span>
+            <span className="stat-item">
+              <span className="stat-icon">❤️</span>
+              <span className="stat-value">{likeCount}</span>
+              <span className="stat-label">likes</span>
+            </span>
+          </div>
         </div>
         <div className="map-view-actions">
+          <button 
+            className={`like-btn ${isLiked ? 'liked' : ''}`}
+            onClick={handleLikeToggle}
+            disabled={isLiking}
+          >
+            {isLiking ? '⏳' : (isLiked ? '❤️' : '🤍')} 
+            {isLiking ? 'Updating...' : (isLiked ? 'Liked' : 'Like')}
+          </button>
           <button 
             className={`route-btn ${showRoute ? 'active' : ''}`}
             onClick={toggleRoute}
@@ -313,53 +426,84 @@ const MapView = () => {
         <div ref={mapRef} className="map-view-map"></div>
         
         {showRoute && routeInfo && (
-          <div className="route-info-panel">
+          <div className={`route-info-panel ${isRoutePanelMinimized ? 'minimized' : ''}`} ref={routePanelRef}>
             <div className="route-summary">
-              <h3>🚶 Food Tour Route</h3>
-              <div className="route-stats">
-                <span className="stat">
-                  <strong>Total Distance:</strong> {routeInfo.totalDistance} km
-                </span>
-                <span className="stat">
-                  <strong>Walking Time:</strong> {routeInfo.totalDuration} minutes
-                </span>
-                <span className="stat">
-                  <strong>Stops:</strong> {routeInfo.locations.length} locations
-                </span>
+              <div className="route-header">
+                <h3>🚶 Food Tour Route</h3>
+                <div className="route-header-buttons">
+                  <button 
+                    className="route-minimize-btn"
+                    onClick={() => setIsRoutePanelMinimized(!isRoutePanelMinimized)}
+                    title={isRoutePanelMinimized ? "Expand route panel" : "Minimize route panel"}
+                  >
+                    {isRoutePanelMinimized ? '⬆️' : '⬇️'}
+                  </button>
+                  <button 
+                    className="route-close-btn"
+                    onClick={() => {
+                      setShowRoute(false);
+                      setRouteInfo(null);
+                      setIsRoutePanelMinimized(false);
+                      if (directionsRenderer) {
+                        directionsRenderer.setMap(null);
+                      }
+                    }}
+                    title="Close route panel"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
+              {!isRoutePanelMinimized && (
+                <div className="route-stats">
+                  <span className="stat">
+                    <strong>Total Distance:</strong> {routeInfo.totalDistance} km
+                  </span>
+                  <span className="stat">
+                    <strong>Walking Time:</strong> {routeInfo.totalDuration} minutes
+                  </span>
+                  <span className="stat">
+                    <strong>Stops:</strong> {routeInfo.locations.length} locations
+                  </span>
+                </div>
+              )}
             </div>
             
-            <div className="route-steps">
-              <h4>Step-by-Step Directions:</h4>
-              {routeInfo.steps.map((step, index) => (
-                <div key={index} className="route-step">
-                  <div className="step-header">
-                    <span className="step-number">{step.step}</span>
-                    <div className="step-info">
-                      <div className="step-route">
-                        <strong>{step.from}</strong> → <strong>{step.to}</strong>
-                      </div>
-                      <div className="step-details">
-                        {step.distance} • {step.duration}
+            {!isRoutePanelMinimized && (
+              <>
+                <div className="route-steps">
+                  <h4>Step-by-Step Directions:</h4>
+                  {routeInfo.steps.map((step, index) => (
+                    <div key={index} className="route-step">
+                      <div className="step-header">
+                        <span className="step-number">{step.step}</span>
+                        <div className="step-info">
+                          <div className="step-route">
+                            <strong>{step.from}</strong> → <strong>{step.to}</strong>
+                          </div>
+                          <div className="step-details">
+                            {step.distance} • {step.duration}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            
-            <div className="route-locations">
-              <h4>Tour Locations in Order:</h4>
-              {routeInfo.locations.map((location, index) => (
-                <div key={index} className="tour-location">
-                  <span className="location-number">{location.order}</span>
-                  <div className="location-info">
-                    <strong>{location.name}</strong>
-                    <p>{location.description}</p>
-                  </div>
+                
+                <div className="route-locations">
+                  <h4>Tour Locations in Order:</h4>
+                  {routeInfo.locations.map((location, index) => (
+                    <div key={index} className="tour-location">
+                      <span className="location-number">{location.order}</span>
+                      <div className="location-info">
+                        <strong>{location.name}</strong>
+                        <p>{location.description}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -373,12 +517,12 @@ const MapView = () => {
                 {marker.image_url && (
                   <img 
                     src={`http://localhost:3001${marker.image_url}`} 
-                    alt={marker.title}
+                    alt={marker.name}
                     className="marker-image"
                   />
                 )}
                 <div className="marker-info">
-                  <h4>{marker.title}</h4>
+                  <h4>{marker.name}</h4>
                   <p>{marker.description}</p>
                 </div>
               </div>

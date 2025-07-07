@@ -36,33 +36,39 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">MapStory Creator</Link>
+        <Link to="/">🗺️ MapStory Creator</Link>
       </div>
       <ul className="navbar-links">
         <li>
-          <Link to="/">Home</Link>
+          <Link to="/">🏠 Home</Link>
         </li>
         <li>
-          <Link to="/explore">Explore</Link>
+          <Link to="/community">🌍 Community</Link>
+        </li>
+        <li>
+          <Link to="/editor">📝 Create Map</Link>
+        </li>
+        <li>
+          <Link to="/explore">🔍 Explore</Link>
         </li>
         {user && (
           <li>
-            <Link to="/my-maps">My Maps</Link>
+            <Link to="/my-maps">🗺️ My Maps</Link>
           </li>
         )}
         {!user ? (
           <>
             <li>
-              <Link to="/login">Login</Link>
+              <Link to="/login">🔐 Sign In</Link>
             </li>
             <li>
-              <Link to="/register">Register</Link>
+              <Link to="/register">📝 Sign Up</Link>
             </li>
           </>
         ) : (
           <li className="user-section">
-            <span className="username">Welcome, {user.username}!</span>
-            <button onClick={handleLogout} className="logout-btn">Logout</button>
+            <span className="username">Hello, {user.username}!</span>
+            <button onClick={handleLogout} className="logout-btn">🚪 Sign Out</button>
           </li>
         )}
       </ul>

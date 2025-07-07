@@ -7,9 +7,12 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.js",
+    "start": "NODE_ENV=production node server.js",
     "start:dev": "nodemon server.js",
-    "seed:dev": "node ./seed.js"
+    "seed:dev": "node ./seed.js",
+    "seed:prod": "NODE_ENV=production node ./seed.js",
+    "deploy": "npm run build && npm run start",
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",
@@ -25,19 +28,19 @@
     "pg": "^8.16.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.3"
+    "react-router-dom": "^7.6.3",
+    "@vitejs/plugin-react": "^4.5.2",
+    "vite": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.5.2",
     "eslint": "^9.29.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",
-    "nodemon": "^3.1.10",
-    "vite": "^7.0.0"
+    "nodemon": "^3.1.10"
   },
   "description": "",
   "main": "eslint.config.js",
@@ -51,5 +54,9 @@
   "bugs": {
     "url": "https://github.com/MinhVu2501/MapStory/issues"
   },
-  "homepage": "https://github.com/MinhVu2501/MapStory#readme"
+  "homepage": "https://github.com/MinhVu2501/MapStory#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
 }
