@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { buildApiUrl } from '../config/api';
 
 const MapCreationForm = ({ mapInstance, onSuccess, onCancel }) => {
   const [title, setTitle] = useState('');
@@ -97,7 +98,7 @@ const MapCreationForm = ({ mapInstance, onSuccess, onCancel }) => {
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/maps', {
+      const response = await fetch(buildApiUrl('/api/maps'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

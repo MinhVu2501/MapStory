@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import { buildApiUrl, API_BASE_URL } from '../config/api';
 import MapCreationForm from './MapCreationForm'; // <--- IMPORT THE MAP CREATION FORM
 
 const Home = () => {
@@ -410,7 +411,7 @@ const Home = () => {
   const fetchPublicStories = async () => {
     try {
       setStoriesLoading(true);
-      const response = await fetch('http://localhost:3001/api/maps/public-stories?limit=8');
+      const response = await fetch(buildApiUrl('/api/maps/public-stories?limit=8'));
       
       if (!response.ok) {
         throw new Error('Failed to fetch public stories');
@@ -463,7 +464,7 @@ const Home = () => {
     
     setIsLiking(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/maps/${storyId}/like`, {
+      const response = await fetch(buildApiUrl(`/api/maps/${storyId}/like`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
