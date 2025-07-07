@@ -26,7 +26,7 @@ const fetchMaps = async (userId = null, searchTerm = null, publicOnly = false, l
     let queryParams = [];
     const conditions = [];
     let paramIndex = 1;
-
+   
     if (userId) {
       conditions.push(`m.user_id = $${paramIndex}`);
       queryParams.push(userId);
@@ -84,7 +84,22 @@ const getMapById = async (mapId) => {
       SELECT id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, created_at, updated_at
       FROM maps WHERE id = $1;
     `, [mapId]);
-    return rows[0];
+    
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    const map = rows[0];
+    
+    // Fetch markers for this map
+    const markersResult = await client.query(`
+      SELECT id, map_id, name, description, latitude, longitude, image_url, order_index, created_at, updated_at
+      FROM markers WHERE map_id = $1 ORDER BY order_index;
+    `, [mapId]);
+    
+    map.markers = markersResult.rows;
+    
+    return map;
   } catch (error) {
     console.error('Error in getMapById:', error);
     throw new Error('Error fetching map by ID: ' + error.message);

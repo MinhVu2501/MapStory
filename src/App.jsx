@@ -5,6 +5,8 @@ import Home from './page/Home';
 import LoginPage from './page/Login';
 import RegisterPage from './page/Register';
 import MyMapsPage from './page/MyMapsPage';
+import ExploreLocations from './page/ExploreLocations';
+import MapView from './page/MapView';
 import './index.css';
 
 function App() {
@@ -15,9 +17,11 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/explore" element={<ExploreLocations />} />
           <Route path="/login" element={<LoginPage />} />       
           <Route path="/register" element={<RegisterPage />} /> 
           <Route path="/my-maps" element={<MyMapsPage />} />
+          <Route path="/map/:id" element={<MapView />} />
           
           <Route path="*" element={<h2>404 Not Found</h2>} /> 
         </Routes>

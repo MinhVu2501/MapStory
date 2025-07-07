@@ -55,6 +55,7 @@ app.use('/api/markers', require('./src/api/marker'));
 
 
 app.use(express.static(path.join(__dirname, 'dist')));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
