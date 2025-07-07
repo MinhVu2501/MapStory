@@ -6,6 +6,7 @@ import LoginPage from './page/Login';
 import RegisterPage from './page/Register';
 import MyMapsPage from './page/MyMapsPage';
 import RoutesPage from './page/RoutesPage';
+import MapTest from './page/MapTest';
 import ExploreLocations from './page/ExploreLocations';
 import MapView from './page/MapView';
 import CommunityLibrary from './page/CommunityLibrary';
@@ -27,6 +28,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} /> 
           <Route path="/my-maps" element={<MyMapsPage />} />
           <Route path="/routes" element={<RoutesPage />} />
+          <Route path="/test" element={<MapTest />} />
           <Route path="/map/:id" element={<MapView />} />
           
           <Route path="*" element={<h2>404 Not Found</h2>} /> 
