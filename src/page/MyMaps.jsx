@@ -23,7 +23,7 @@ const MyMapsPage = () => {
           return;
         }
 
-        const response = await fetch(`http://localhost:3000/api/maps?userId=${user.id}`, {
+        const response = await fetch(`http://localhost:3001/api/maps?userId=${user.id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

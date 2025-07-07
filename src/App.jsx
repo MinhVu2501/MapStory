@@ -18,6 +18,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />       
           <Route path="/register" element={<RegisterPage />} /> 
           <Route path="/my-maps" element={<MyMapsPage />} />
+          
           <Route path="*" element={<h2>404 Not Found</h2>} /> 
         </Routes>
       </main>
