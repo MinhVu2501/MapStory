@@ -30,6 +30,12 @@ const Home = () => {
   const [measurementPolyline, setMeasurementPolyline] = useState(null);
   const [drawnShapes, setDrawnShapes] = useState([]);
 
+  // Share Stories state
+  const [publicStories, setPublicStories] = useState([]);
+  const [storiesLoading, setStoriesLoading] = useState(false);
+  const [selectedStory, setSelectedStory] = useState(null);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+
   useEffect(() => {
     const initMap = async () => {
       try {
@@ -392,6 +398,41 @@ const Home = () => {
     // navigate('/my-maps'); // If you want to go to My Maps after creation
   };
 
+  // Fetch public stories
+  const fetchPublicStories = async () => {
+    try {
+      setStoriesLoading(true);
+      const response = await fetch('http://localhost:3001/api/maps/public-stories?limit=8');
+      if (response.ok) {
+        const stories = await response.json();
+        setPublicStories(stories);
+      } else {
+        console.error('Failed to fetch public stories');
+      }
+    } catch (error) {
+      console.error('Error fetching public stories:', error);
+    } finally {
+      setStoriesLoading(false);
+    }
+  };
+
+  // Load public stories on component mount
+  useEffect(() => {
+    fetchPublicStories();
+  }, []);
+
+  // Handle story selection
+  const handleStoryClick = (story) => {
+    setSelectedStory(story);
+    setShowStoryModal(true);
+  };
+
+  // Close story modal
+  const closeStoryModal = () => {
+    setShowStoryModal(false);
+    setSelectedStory(null);
+  };
+
   return (
     <div className="home-page">
       <div className="hero-section">
@@ -518,6 +559,102 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Share Stories Section */}
+      <div className="share-stories-section">
+        <h2>🌍 Discover Community Stories</h2>
+        <p>Explore amazing map stories shared by our community</p>
+        
+        {storiesLoading ? (
+          <div className="stories-loading">
+            <div className="loading-spinner"></div>
+            <p>Loading stories...</p>
+          </div>
+        ) : (
+          <div className="stories-grid">
+            {publicStories.length > 0 ? (
+              publicStories.map((story) => (
+                <div
+                  key={story.id}
+                  className="story-card"
+                  onClick={() => handleStoryClick(story)}
+                >
+                  <div className="story-thumbnail">
+                    {story.thumbnail_url ? (
+                      <img src={story.thumbnail_url} alt={story.title} />
+                    ) : (
+                      <div className="story-placeholder">
+                        <span className="story-icon">🗺️</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="story-content">
+                    <h3>{story.title}</h3>
+                    <p className="story-description">{story.description}</p>
+                    <div className="story-meta">
+                      <span className="story-author">By {story.author_name || 'Anonymous'}</span>
+                      <span className="story-date">
+                        {new Date(story.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="story-actions">
+                    <button className="story-view-btn">View Story</button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-stories">
+                <p>No public stories available yet. Be the first to share your story!</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Story Modal */}
+      {showStoryModal && selectedStory && (
+        <div className="story-modal-overlay" onClick={closeStoryModal}>
+          <div className="story-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="story-modal-header">
+              <h2>{selectedStory.title}</h2>
+              <button className="story-modal-close" onClick={closeStoryModal}>
+                ×
+              </button>
+            </div>
+            <div className="story-modal-content">
+              <div className="story-modal-info">
+                <p className="story-modal-description">{selectedStory.description}</p>
+                <div className="story-modal-meta">
+                  <span className="story-modal-author">
+                    Created by {selectedStory.author_name || 'Anonymous'}
+                  </span>
+                  <span className="story-modal-date">
+                    {new Date(selectedStory.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              <div className="story-modal-actions">
+                <button 
+                  className="story-modal-view-btn"
+                  onClick={() => {
+                    // Navigate to the map view
+                    window.open(`/map/${selectedStory.id}`, '_blank');
+                  }}
+                >
+                  View Full Map
+                </button>
+                <button className="story-modal-like-btn">
+                  ❤️ Like
+                </button>
+                <button className="story-modal-share-btn">
+                  📤 Share
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

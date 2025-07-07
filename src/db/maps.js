@@ -14,26 +14,31 @@ const createMap = async ({ userId, title, description, isPublic = true, centerLa
   }
 };
 
-const fetchMaps = async (userId = null, searchTerm = null) => {
+const fetchMaps = async (userId = null, searchTerm = null, publicOnly = false, limit = null, offset = null, sortBy = 'created_at', order = 'DESC') => {
   try {
-    let queryText = `SELECT id, user_id, title, description, is_public, center_lat, center_lng, zoom_level, thumbnail_url, created_at, updated_at FROM maps`;
+    let queryText = `
+      SELECT m.id, m.user_id, m.title, m.description, m.is_public, m.center_lat, m.center_lng, 
+             m.zoom_level, m.thumbnail_url, m.created_at, m.updated_at,
+             u.username as author_name
+      FROM maps m 
+      LEFT JOIN users u ON m.user_id = u.id
+    `;
     let queryParams = [];
     const conditions = [];
     let paramIndex = 1;
 
-   
     if (userId) {
-      conditions.push(`user_id = $${paramIndex}`);
+      conditions.push(`m.user_id = $${paramIndex}`);
       queryParams.push(userId);
       paramIndex++;
+    } else if (publicOnly) {
+      conditions.push(`m.is_public = TRUE`);
     } else {
-      
-      conditions.push(`is_public = TRUE`);
+      conditions.push(`m.is_public = TRUE`);
     }
 
     if (searchTerm) {
-
-      conditions.push(`(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
+      conditions.push(`(m.title ILIKE $${paramIndex} OR m.description ILIKE $${paramIndex})`);
       queryParams.push(`%${searchTerm}%`); 
       paramIndex++;
     }
@@ -42,7 +47,28 @@ const fetchMaps = async (userId = null, searchTerm = null) => {
       queryText += ` WHERE ${conditions.join(' AND ')}`;
     }
 
-    queryText += ` ORDER BY created_at DESC;`; 
+    // Add sorting
+    const validSortColumns = ['created_at', 'updated_at', 'title'];
+    const validOrders = ['ASC', 'DESC'];
+    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const safeOrder = validOrders.includes(order.toUpperCase()) ? order.toUpperCase() : 'DESC';
+    
+    queryText += ` ORDER BY m.${safeSortBy} ${safeOrder}`;
+
+    // Add pagination
+    if (limit) {
+      queryText += ` LIMIT $${paramIndex}`;
+      queryParams.push(limit);
+      paramIndex++;
+    }
+
+    if (offset) {
+      queryText += ` OFFSET $${paramIndex}`;
+      queryParams.push(offset);
+      paramIndex++;
+    }
+
+    queryText += `;`;
 
     const { rows } = await client.query(queryText, queryParams);
     return rows;
