@@ -176,8 +176,8 @@ const seedData = async () => {
   console.log('  Map3:', map3.title, map3.id);
 
   console.log('\nCreating dummy markers...');
-  // Markers for map1 (Da Lat)
-  marker1_map1 = await createMarker({ // Store this marker for demos
+ 
+  marker1_map1 = await createMarker({ 
     mapId: map1.id,
     name: 'Xuan Huong Lake',
     description: 'The iconic lake at the heart of Da Lat. Great for a morning stroll.',
@@ -205,7 +205,7 @@ const seedData = async () => {
     orderIndex: 3
   });
 
-  // Markers for map2 (Hanoi)
+
   await createMarker({
     mapId: map2.id,
     name: 'Hoan Kiem Lake',
@@ -225,7 +225,7 @@ const seedData = async () => {
     orderIndex: 2
   });
 
-  // Markers for map3 (Saigon)
+
   await createMarker({
     mapId: map3.id,
     name: 'Ben Thanh Market',
