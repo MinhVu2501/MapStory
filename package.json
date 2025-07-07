@@ -12,10 +12,12 @@
     "seed:dev": "node ./seed.js",
     "seed:prod": "NODE_ENV=production node ./seed.js",
     "deploy": "npm run build && npm run start",
-    "heroku-postbuild": "npm run build"
+    "heroku-postbuild": "npm run build",
+    "render-build": "./render-build.sh"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",
+    "@vitejs/plugin-react": "^4.5.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
@@ -29,7 +31,6 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3",
-    "@vitejs/plugin-react": "^4.5.2",
     "vite": "^7.0.0"
   },
   "devDependencies": {
