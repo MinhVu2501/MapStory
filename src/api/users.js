@@ -9,7 +9,7 @@ const {
   validateUser,
   fetchUsers,
   getUserById
-} = require('../../users'); //
+} = require('../../users');
 
 const {
     fetchMaps
