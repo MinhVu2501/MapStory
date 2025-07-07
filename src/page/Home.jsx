@@ -36,6 +36,9 @@ const Home = () => {
   const [selectedStory, setSelectedStory] = useState(null);
   const [showStoryModal, setShowStoryModal] = useState(false);
 
+  // Landing page state
+  const [showLandingPage, setShowLandingPage] = useState(true);
+
   useEffect(() => {
     const initMap = async () => {
       try {
@@ -403,14 +406,15 @@ const Home = () => {
     try {
       setStoriesLoading(true);
       const response = await fetch('http://localhost:3001/api/maps/public-stories?limit=8');
-      if (response.ok) {
-        const stories = await response.json();
-        setPublicStories(stories);
-      } else {
-        console.error('Failed to fetch public stories');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch public stories');
       }
-    } catch (error) {
-      console.error('Error fetching public stories:', error);
+      
+      const data = await response.json();
+      setPublicStories(data);
+    } catch (err) {
+      console.error('Error fetching public stories:', err);
     } finally {
       setStoriesLoading(false);
     }
@@ -433,65 +437,389 @@ const Home = () => {
     setSelectedStory(null);
   };
 
+  const handleGetStarted = () => {
+    setShowLandingPage(false);
+    setShowCreateMapForm(true);
+  };
+
+  const handleExploreMap = () => {
+    setShowLandingPage(false);
+  };
+
+  if (showLandingPage) {
+    return (
+      <div className="landing-page">
+        {/* Header */}
+        <header className="landing-header">
+          <div className="header-container">
+            <div className="logo">
+              <h1>🗺️ MapStory Creator</h1>
+            </div>
+            <nav className="nav-menu">
+              <a href="#features">Features</a>
+              <a href="#community">Community Library</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#blog">Blog</a>
+            </nav>
+            <div className="auth-buttons">
+              <button className="login-btn">Sign In</button>
+              <button className="signup-btn" onClick={handleGetStarted}>Sign Up Free</button>
+            </div>
+          </div>
+        </header>
+
+        {/* Hero Section */}
+        <section className="hero-section">
+          <div className="hero-container">
+            <div className="hero-content">
+              <h1 className="hero-title">Tell Your Story on the Map</h1>
+              <p className="hero-subtitle">
+                Easily create travel maps, journey diaries, and virtual tours with images, videos, and personal stories.
+              </p>
+              <button className="hero-cta" onClick={handleGetStarted}>
+                Create Your First Map (Free)
+              </button>
+              <div className="hero-demo">
+                <div className="demo-video">
+                  <div className="video-placeholder">
+                    <div className="play-button">▶️</div>
+                    <p>Watch Demo - Create a map in 2 minutes</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="hero-visual">
+              <div className="floating-map">
+                <div className="map-preview">
+                  <div className="map-markers">
+                    <div className="marker marker-1">📍</div>
+                    <div className="marker marker-2">📍</div>
+                    <div className="marker marker-3">📍</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section id="features" className="how-it-works">
+          <div className="container">
+            <h2>How It Works</h2>
+            <div className="steps-grid">
+              <div className="step">
+                <div className="step-icon">📍</div>
+                <h3>Mark Locations</h3>
+                <p>Select any point on the map and add it to your story</p>
+              </div>
+              <div className="step">
+                <div className="step-icon">📝</div>
+                <h3>Add Stories</h3>
+                <p>Attach photos, videos, and text to each point to create vivid stories</p>
+              </div>
+              <div className="step">
+                <div className="step-icon">🎨</div>
+                <h3>Customize & Arrange</h3>
+                <p>Drag and drop points, choose icons, arrange story sequence as you like</p>
+              </div>
+              <div className="step">
+                <div className="step-icon">🚀</div>
+                <h3>Share & Explore</h3>
+                <p>Share links or embed your map with friends and the community</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Featured Map Stories */}
+        <section id="community" className="featured-stories">
+          <div className="container">
+            <h2>Map Story Examples</h2>
+            <p>Explore amazing stories created by the community</p>
+            
+            {storiesLoading ? (
+              <div className="stories-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading stories...</p>
+              </div>
+            ) : (
+              <div className="stories-grid">
+                {publicStories.map((story) => (
+                  <div key={story.id} className="story-card" onClick={() => handleStoryClick(story)}>
+                    <div className="story-thumbnail">
+                      {story.thumbnail_url ? (
+                        <img src={story.thumbnail_url} alt={story.title} />
+                      ) : (
+                        <div className="story-placeholder">
+                          <div className="story-icon">🗺️</div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="story-content">
+                      <h3>{story.title}</h3>
+                      <p className="story-description">{story.description}</p>
+                      <div className="story-meta">
+                        <span className="story-author">by {story.author_name || 'Anonymous'}</span>
+                        <span className="story-date">{new Date(story.created_at).toLocaleDateString('en-US')}</span>
+                      </div>
+                    </div>
+                    <div className="story-actions">
+                      <button className="story-view-btn">View Map</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {publicStories.length === 0 && !storiesLoading && (
+              <div className="no-stories">
+                <p>No stories shared yet. Be the first!</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Why Choose MapStory Creator */}
+        <section className="why-choose-us">
+          <div className="container">
+            <h2>Why Choose MapStory Creator?</h2>
+            <div className="benefits-grid">
+              <div className="benefit">
+                <div className="benefit-icon">🎯</div>
+                <h3>Intuitive & Easy to Use</h3>
+                <p>Simple drag-and-drop interface, no technical skills required</p>
+              </div>
+              <div className="benefit">
+                <div className="benefit-icon">🎭</div>
+                <h3>Rich Multimedia Support</h3>
+                <p>Support for images, videos, text, and many other formats</p>
+              </div>
+              <div className="benefit">
+                <div className="benefit-icon">🚶</div>
+                <h3>Walkthrough Feature</h3>
+                <p>Automatically guide viewers through your story</p>
+              </div>
+              <div className="benefit">
+                <div className="benefit-icon">🎨</div>
+                <h3>Unlimited Customization</h3>
+                <p>Icons, colors, layout according to your personal style</p>
+              </div>
+              <div className="benefit">
+                <div className="benefit-icon">🌍</div>
+                <h3>Community & Sharing</h3>
+                <p>Easily search and share maps with the community</p>
+              </div>
+              <div className="benefit">
+                <div className="benefit-icon">📱</div>
+                <h3>Responsive on All Devices</h3>
+                <p>Works smoothly on desktop, tablet, and mobile</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="pricing-section">
+          <div className="container">
+            <h2>Choose Your Perfect Plan</h2>
+            <div className="pricing-grid">
+              <div className="pricing-card">
+                <h3>Free</h3>
+                <div className="price">$0<span>/month</span></div>
+                <ul className="features-list">
+                  <li>✅ Create up to 3 maps</li>
+                  <li>✅ 100MB storage</li>
+                  <li>✅ Basic features</li>
+                  <li>✅ Public sharing</li>
+                  <li>❌ No watermark</li>
+                </ul>
+                <button className="pricing-btn" onClick={handleGetStarted}>Start Free</button>
+              </div>
+              <div className="pricing-card featured">
+                <div className="popular-badge">Popular</div>
+                <h3>Pro</h3>
+                <div className="price">$9<span>/month</span></div>
+                <ul className="features-list">
+                  <li>✅ Unlimited maps</li>
+                  <li>✅ 10GB storage</li>
+                  <li>✅ All features</li>
+                  <li>✅ No watermark</li>
+                  <li>✅ Custom domain</li>
+                  <li>✅ Detailed analytics</li>
+                </ul>
+                <button className="pricing-btn">Upgrade to Pro</button>
+              </div>
+              <div className="pricing-card">
+                <h3>Team</h3>
+                <div className="price">$29<span>/month</span></div>
+                <ul className="features-list">
+                  <li>✅ All Pro features</li>
+                  <li>✅ 100GB storage</li>
+                  <li>✅ Team collaboration</li>
+                  <li>✅ Member management</li>
+                  <li>✅ Priority support</li>
+                  <li>✅ API integration</li>
+                </ul>
+                <button className="pricing-btn">Contact Us</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="final-cta">
+          <div className="container">
+            <h2>Ready to Create Your Story?</h2>
+            <p>Join thousands who trust MapStory Creator</p>
+            <button className="cta-button" onClick={handleGetStarted}>
+              Get Started - Free
+            </button>
+            <button className="cta-button secondary" onClick={handleExploreMap}>
+              Explore Sample Maps
+            </button>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="landing-footer">
+          <div className="container">
+            <div className="footer-content">
+              <div className="footer-section">
+                <h3>MapStory Creator</h3>
+                <p>Leading interactive map storytelling platform</p>
+                <div className="social-links">
+                  <a href="#" aria-label="Facebook">📘</a>
+                  <a href="#" aria-label="Twitter">🐦</a>
+                  <a href="#" aria-label="Instagram">📷</a>
+                  <a href="#" aria-label="YouTube">📺</a>
+                </div>
+              </div>
+              <div className="footer-section">
+                <h4>Product</h4>
+                <ul>
+                  <li><a href="#features">Features</a></li>
+                  <li><a href="#pricing">Pricing</a></li>
+                  <li><a href="#community">Community</a></li>
+                  <li><a href="#blog">Blog</a></li>
+                </ul>
+              </div>
+              <div className="footer-section">
+                <h4>Support</h4>
+                <ul>
+                  <li><a href="#help">Help Center</a></li>
+                  <li><a href="#contact">Contact</a></li>
+                  <li><a href="#tutorials">Tutorials</a></li>
+                  <li><a href="#api">API</a></li>
+                </ul>
+              </div>
+              <div className="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                  <li><a href="#terms">Terms of Service</a></li>
+                  <li><a href="#privacy">Privacy Policy</a></li>
+                  <li><a href="#cookies">Cookie Policy</a></li>
+                </ul>
+              </div>
+            </div>
+            <div className="footer-bottom">
+              <p>&copy; 2024 MapStory Creator. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+
+        {/* Story Modal */}
+        {showStoryModal && selectedStory && (
+          <div className="story-modal-overlay" onClick={closeStoryModal}>
+            <div className="story-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="story-modal-header">
+                <h2>{selectedStory.title}</h2>
+                <button className="story-modal-close" onClick={closeStoryModal}>×</button>
+              </div>
+              <div className="story-modal-content">
+                <p className="story-modal-description">{selectedStory.description}</p>
+                <div className="story-modal-meta">
+                  <span className="story-modal-author">Author: {selectedStory.author_name || 'Anonymous'}</span>
+                  <span className="story-modal-date">Created: {new Date(selectedStory.created_at).toLocaleDateString('en-US')}</span>
+                </div>
+                <div className="story-modal-actions">
+                                      <a href={`/map/${selectedStory.id}`} className="story-modal-view-btn">
+                      View Full Map
+                    </a>
+                    <button className="story-modal-like-btn">
+                      ❤️ Like
+                    </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="home-page">
       <div className="hero-section">
-        <h1>Welcome to MapStory Creator!</h1>
-        <p>Your platform for creating and sharing interactive map stories.</p>
+        <h1>Explore the World Through Maps</h1>
+        <p>Search for locations, create personal maps, and share your stories</p>
+      </div>
 
-        <div className="search-container">
-          <form onSubmit={handleSearch} className="search-form">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search for a city, place, or address..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            <button type="submit" className="search-btn">
-              Search
+      <div className="search-container">
+        <form className="search-form" onSubmit={handleSearch}>
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="search-input"
+            placeholder="Search for places, restaurants, hotels..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button type="submit" className="search-btn" disabled={loading}>
+            {loading ? '🔄' : '🔍'}
+          </button>
+          {searchQuery && (
+            <button type="button" className="clear-btn" onClick={clearSearch}>
+              ✕
             </button>
-            {searchResults.length > 0 && (
-              <button type="button" onClick={clearSearch} className="clear-btn">
-                Clear
-              </button>
-            )}
-          </form>
-
-          <div className="popular-searches">
-            <p>Popular searches:</p>
-            <div className="search-tags">
-              {['New York', 'London', 'Tokyo', 'Paris', 'Sydney', 'Dubai', 'Singapore', 'Bangkok'].map(city => (
-                <button
-                  key={city}
-                  className="search-tag"
-                  onClick={() => {
-                    setSearchQuery(city);
-                    handleSearch({ preventDefault: () => {} });
-                  }}
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
+          )}
+        </form>
+        
+        <div className="popular-searches">
+          <p>Popular searches:</p>
+          <div className="search-tags">
+            <span className="search-tag" onClick={() => setSearchQuery('restaurants New York')}>Restaurants NYC</span>
+            <span className="search-tag" onClick={() => setSearchQuery('hotels Paris')}>Hotels Paris</span>
+            <span className="search-tag" onClick={() => setSearchQuery('tourist attractions London')}>London Attractions</span>
+            <span className="search-tag" onClick={() => setSearchQuery('coffee shops Tokyo')}>Tokyo Coffee</span>
           </div>
         </div>
       </div>
 
       <div className="map-container">
-        {loading && <div className="loading">Loading map...</div>}
-        {error && <div className="error">{error}</div>}
+        {loading && (
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <p>Loading map...</p>
+          </div>
+        )}
+        
+        {error && (
+          <div className="error">
+            <h3>Map Loading Error</h3>
+            <p>{error}</p>
+            <button onClick={() => window.location.reload()}>Try Again</button>
+          </div>
+        )}
+        
         <div ref={mapRef} className="google-map"></div>
       </div>
 
-      {/* Conditionally render MapCreationForm as an overlay or within the section */}
       {showCreateMapForm && (
-        <div className="create-map-overlay"> {/* Add styling for overlay */}
+        <div className="create-map-overlay">
           <MapCreationForm
-            mapInstance={map} // Pass the map instance to the form
-            onSuccess={handleMapCreationSuccess} // Callback on success
-            onCancel={() => setShowCreateMapForm(false)} // Callback to close form on cancel
+            mapInstance={map}
+            onSuccess={handleMapCreationSuccess}
+            onCancel={() => setShowCreateMapForm(false)}
           />
         </div>
       )}
@@ -554,7 +882,6 @@ const Home = () => {
           <div className="feature-card">
             <h3>🗺️ Create Maps</h3>
             <p>Build interactive maps with your own stories and markers.</p>
-            {/* Button to show the MapCreationForm */}
             <button onClick={() => setShowCreateMapForm(true)} className="action-button">
               Start Creating
             </button>
@@ -566,7 +893,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Share Stories Section */}
       <div className="share-stories-section">
         <h2>🌍 Discover Community Stories</h2>
         <p>Explore amazing map stories shared by our community</p>
@@ -618,7 +944,6 @@ const Home = () => {
         )}
       </div>
 
-      {/* Story Modal */}
       {showStoryModal && selectedStory && (
         <div className="story-modal-overlay" onClick={closeStoryModal}>
           <div className="story-modal" onClick={(e) => e.stopPropagation()}>
