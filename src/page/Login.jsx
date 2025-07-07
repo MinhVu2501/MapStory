@@ -33,6 +33,8 @@ const LoginPage = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
+        window.dispatchEvent(new CustomEvent('userLogin'));
+        
         setTimeout(() => {
           navigate('/');
         }, 1500);
