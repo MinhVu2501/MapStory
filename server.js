@@ -56,12 +56,34 @@ app.use('/api/markers', markersRouter);
 
 // Serve React app in production
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the React app build directory
-  app.use(express.static(path.join(__dirname, 'dist')));
+  // Serve static files from the React app build directory with proper caching
+  app.use(express.static(path.join(__dirname, 'dist'), {
+    maxAge: '1y',
+    etag: false,
+    setHeaders: (res, filePath) => {
+      // Don't cache index.html
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  }));
   
-  // Handle React routing - send all requests to React app
+  // Handle React routing - send all non-API requests to React app
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API endpoint not found' });
+    }
+    
+    const indexPath = path.join(__dirname, 'dist', 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('Error serving index.html:', err);
+        res.status(500).send('Internal Server Error');
+      }
+    });
   });
 } else {
   // Development mode - API only
@@ -81,11 +103,6 @@ app.use((err, req, res, next) => {
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'production' ? {} : err.message
   });
-});
-
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ message: 'API endpoint not found' });
 });
 
 const startServer = async () => {
