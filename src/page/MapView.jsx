@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import { loadGoogleMaps, getApiKeyStatus } from '../utils/googleMapsLoader';
 import { buildApiUrl, API_BASE_URL } from '../config/api';
 
 const MapView = () => {
@@ -9,6 +9,7 @@ const MapView = () => {
   const [mapData, setMapData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [apiKeyError, setApiKeyError] = useState(null);
   const [showRoute, setShowRoute] = useState(false);
   const [directionsRenderer, setDirectionsRenderer] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
@@ -26,6 +27,14 @@ const MapView = () => {
 
   useEffect(() => {
     if (mapData) {
+      // Check API key status first
+      const apiKeyStatus = getApiKeyStatus();
+      if (!apiKeyStatus.isValid) {
+        setApiKeyError(apiKeyStatus);
+        setLoading(false);
+        return;
+      }
+
       // Add a small delay to ensure DOM is ready
       setTimeout(() => {
         initializeMap();
@@ -187,7 +196,11 @@ const MapView = () => {
 
     } catch (err) {
       console.error('Error loading Google Maps:', err);
-      setError('Failed to load map. Please try again.');
+      if (err.message.includes('API key') || err.message.includes('placeholder')) {
+        setApiKeyError(getApiKeyStatus());
+      } else {
+        setError('Failed to load map. Please try again.');
+      }
     }
   };
 
@@ -396,6 +409,42 @@ const MapView = () => {
         <h2>Error Loading Map</h2>
         <p>{error}</p>
         <button onClick={() => window.history.back()}>Go Back</button>
+      </div>
+    );
+  }
+
+  if (apiKeyError) {
+    return (
+      <div className="map-view-error">
+        <h2>Google Maps Configuration Required</h2>
+        <div className="api-key-error-content">
+          <p><strong>Issue:</strong> {apiKeyError.message}</p>
+          <p><strong>Solution:</strong> {apiKeyError.instruction}</p>
+          
+          <div className="api-key-instructions">
+            <h3>🔧 How to fix this:</h3>
+            <ol>
+              <li>Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
+              <li>Create a new project or select an existing one</li>
+              <li>Enable the following APIs:
+                <ul>
+                  <li>Maps JavaScript API</li>
+                  <li>Places API</li>
+                  <li>Directions API</li>
+                  <li>Geocoding API</li>
+                </ul>
+              </li>
+              <li>Create an API key in the "Credentials" section</li>
+              <li>Update your <code>.env</code> file with: <code>VITE_GOOGLE_MAPS_API_KEY=your_api_key_here</code></li>
+              <li>Restart your development server</li>
+            </ol>
+          </div>
+          
+          <div className="api-key-actions">
+            <button onClick={() => window.history.back()}>Go Back</button>
+            <button onClick={() => window.location.reload()}>Try Again</button>
+          </div>
+        </div>
       </div>
     );
   }
