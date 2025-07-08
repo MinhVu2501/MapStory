@@ -4,10 +4,28 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const { Client } = require('pg');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+
+// Create database pool for better connection management
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com') 
+    ? { rejectUnauthorized: false } 
+    : false,
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+  maxUses: 7500, // Close (and replace) a connection after it has been used this many times
+});
+
+// Handle pool errors
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
+  // Don't exit the process, just log the error
+});
 
 // Security middleware
 app.use(helmet({
@@ -106,16 +124,8 @@ app.use((err, req, res, next) => {
 });
 
 const startServer = async () => {
-  // Create a fresh client instance for the server
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com') 
-      ? { rejectUnauthorized: false } 
-      : false
-  });
-  
   try {
-    // Initialize database schema in production first, before connecting main client
+    // Initialize database schema in production first
     if (process.env.NODE_ENV === 'production') {
       console.log('🔄 Initializing database schema for production...');
       try {
@@ -139,20 +149,22 @@ const startServer = async () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    // Now connect the main server client
-    console.log('Attempting to connect to the database...');
-    await client.connect();
-    console.log('Successfully connected to the database!');
+    // Test database connection
+    console.log('Testing database connection...');
+    const client = await pool.connect();
+    await client.query('SELECT NOW()');
+    client.release();
+    console.log('✅ Database connection pool established successfully!');
 
-    // Inject the client into all database modules
+    // Inject the pool into all database modules
     const { setClient: setMapsClient } = require('./src/db/maps');
     const { setClient: setMarkersClient } = require('./src/db/markers');
     const { setClient: setUsersClient } = require('./users');
     
-    setMapsClient(client);
-    setMarkersClient(client);
-    setUsersClient(client);
-    console.log('✅ Database client injected into all modules');
+    setMapsClient(pool);
+    setMarkersClient(pool);
+    setUsersClient(pool);
+    console.log('✅ Database pool injected into all modules');
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
@@ -164,6 +176,15 @@ const startServer = async () => {
         console.log(`🎨 Frontend: http://localhost:5173`);
       }
     });
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      console.log('🔄 Gracefully shutting down...');
+      await pool.end();
+      console.log('✅ Database pool closed');
+      process.exit(0);
+    });
+
   } catch (error) {
     console.error('Failed to connect to the database or start server:', error);
     process.exit(1);
