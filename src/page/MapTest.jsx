@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import React, { useState, useEffect } from 'react';
 
 const MapTest = () => {
   const [map, setMap] = useState(null);
@@ -8,6 +7,15 @@ const MapTest = () => {
   const [apiKey, setApiKey] = useState('');
   const [testResults, setTestResults] = useState([]);
   const mapRef = useRef(null);
+
+  const [tests, setTests] = useState([
+    { name: 'API Key Configuration', status: 'pending', details: '' },
+    { name: 'Google Maps API Loading', status: 'pending', details: '' },
+    { name: 'Map Instance Creation', status: 'pending', details: '' },
+    { name: 'Marker Creation', status: 'pending', details: '' },
+    { name: 'Info Window', status: 'pending', details: '' },
+    { name: 'Multiple Markers', status: 'pending', details: '' }
+  ]);
 
   useEffect(() => {
     // Get the API key from environment
@@ -128,95 +136,233 @@ const MapTest = () => {
     }
   };
 
-  return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>🗺️ Google Maps API Test</h1>
-      <p>This page tests if Google Maps API is working correctly.</p>
+  const updateTest = (index, status, details) => {
+    setTests(prev => prev.map((test, i) => 
+      i === index ? { ...test, status, details } : test
+    ));
+  };
+
+  const runTests = async () => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    
+    // Test 1: API Key Configuration
+    if (!apiKey) {
+      updateTest(0, 'failed', 'No API key found in environment variables');
+      return;
+    } else if (apiKey === 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg' || 
+               apiKey === 'AIzaSyBkNaAGLEVq0YYQQFMaX_mOA3mHp-vcaM0') {
+      updateTest(0, 'failed', 'Using placeholder API key - you need a real Google Maps API key');
+      return;
+    } else {
+      updateTest(0, 'passed', `API key configured: ${apiKey.substring(0, 20)}...`);
+    }
+
+    // Test 2: Google Maps API Loading
+    try {
+      // Load Google Maps script dynamically
+      if (!window.google) {
+        await loadGoogleMapsScript(apiKey);
+      }
+      updateTest(1, 'passed', 'Google Maps API loaded successfully');
+    } catch (error) {
+      updateTest(1, 'failed', `Error loading Google Maps: ${error.message}`);
+      return;
+    }
+
+    // Test 3: Map Instance Creation
+    try {
+      const mapElement = document.getElementById('test-map');
+      if (!mapElement) {
+        updateTest(2, 'failed', 'Map container element not found');
+        return;
+      }
+
+      const map = new window.google.maps.Map(mapElement, {
+        center: { lat: 10.8231, lng: 106.6297 },
+        zoom: 13
+      });
       
-      <div style={{ marginBottom: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '8px' }}>
-        <h3>Configuration</h3>
-        <p><strong>API Key:</strong> {apiKey ? `${apiKey.substring(0, 10)}...` : 'Not configured'}</p>
-        <p><strong>Status:</strong> {loading ? 'Loading...' : error ? 'Error' : 'Ready'}</p>
-        {error && <p style={{ color: 'red' }}><strong>Error:</strong> {error}</p>}
+      updateTest(2, 'passed', 'Map instance created successfully');
+
+      // Test 4: Marker Creation
+      try {
+        const marker = new window.google.maps.Marker({
+          position: { lat: 10.8231, lng: 106.6297 },
+          map: map,
+          title: 'Test Marker'
+        });
+        updateTest(3, 'passed', 'Marker created successfully');
+
+        // Test 5: Info Window
+        try {
+          const infoWindow = new window.google.maps.InfoWindow({
+            content: '<div>Test Info Window</div>'
+          });
+          
+          marker.addListener('click', () => {
+            infoWindow.open(map, marker);
+          });
+          
+          updateTest(4, 'passed', 'Info window created and click listener added');
+
+          // Test 6: Multiple Markers
+          try {
+            const locations = [
+              { lat: 10.8231, lng: 106.6297, title: 'Location 1' },
+              { lat: 10.8331, lng: 106.6397, title: 'Location 2' },
+              { lat: 10.8131, lng: 106.6197, title: 'Location 3' }
+            ];
+
+            locations.forEach((location, index) => {
+              new window.google.maps.Marker({
+                position: { lat: location.lat, lng: location.lng },
+                map: map,
+                title: location.title
+              });
+            });
+
+            updateTest(5, 'passed', `${locations.length} markers created successfully`);
+          } catch (error) {
+            updateTest(5, 'failed', `Multiple markers error: ${error.message}`);
+          }
+        } catch (error) {
+          updateTest(4, 'failed', `Info window error: ${error.message}`);
+        }
+      } catch (error) {
+        updateTest(3, 'failed', `Marker creation error: ${error.message}`);
+      }
+    } catch (error) {
+      updateTest(2, 'failed', `Map creation error: ${error.message}`);
+    }
+  };
+
+  const loadGoogleMapsScript = (apiKey) => {
+    return new Promise((resolve, reject) => {
+      if (window.google) {
+        resolve(window.google);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,drawing,geometry`;
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = () => {
+        if (window.google) {
+          resolve(window.google);
+        } else {
+          reject(new Error('Google Maps API failed to load'));
+        }
+      };
+      
+      script.onerror = () => {
+        reject(new Error('Failed to load Google Maps script'));
+      };
+      
+      document.head.appendChild(script);
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'passed': return '#4CAF50';
+      case 'failed': return '#f44336';
+      case 'pending': return '#ff9800';
+      default: return '#757575';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'passed': return '✅';
+      case 'failed': return '❌';
+      case 'pending': return '⏳';
+      default: return '❓';
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1>🧪 Google Maps API Test Suite</h1>
+      
+      <div style={{ 
+        backgroundColor: '#fff3cd', 
+        border: '1px solid #ffeaa7', 
+        borderRadius: '8px', 
+        padding: '15px', 
+        marginBottom: '20px' 
+      }}>
+        <h3>⚠️ Important: Google Maps API Key Required</h3>
+        <p>To use this application, you need a valid Google Maps API key. The current key is a placeholder.</p>
+        <ol>
+          <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+          <li>Create a project and enable: Maps JavaScript API, Places API, Directions API</li>
+          <li>Create an API key and add it to your .env file</li>
+          <li>Restart the development server</li>
+        </ol>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px', height: '600px' }}>
-        <div style={{ flex: 1 }}>
-          <h3>Map Test</h3>
-          <div 
-            ref={mapRef}
-            style={{ 
-              width: '100%', 
-              height: '500px', 
-              border: '2px solid #ddd', 
-              borderRadius: '8px',
-              background: loading ? '#f0f0f0' : 'transparent'
-            }}
-          >
-            {loading && (
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                height: '100%',
-                color: '#666'
-              }}>
-                Loading Google Maps...
-              </div>
-            )}
-          </div>
-          <div style={{ marginTop: '10px' }}>
-            <button onClick={testApiConnection} style={{ padding: '10px 20px', marginRight: '10px' }}>
-              Test API Connection
-            </button>
-            <button onClick={initializeTestMap} style={{ padding: '10px 20px' }}>
-              Reload Map
-            </button>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, maxHeight: '500px', overflow: 'auto' }}>
-          <h3>Test Results</h3>
-          <div style={{ background: 'white', border: '1px solid #ddd', borderRadius: '8px', padding: '15px' }}>
-            {testResults.length === 0 ? (
-              <p style={{ color: '#666', fontStyle: 'italic' }}>No tests run yet...</p>
-            ) : (
-              testResults.map((result, index) => (
-                <div 
-                  key={index} 
-                  style={{ 
-                    marginBottom: '10px', 
-                    padding: '8px', 
-                    borderLeft: `4px solid ${result.success ? '#4CAF50' : '#F44336'}`,
-                    background: result.success ? '#E8F5E8' : '#FFEBEE'
-                  }}
-                >
-                  <div style={{ fontWeight: 'bold', color: result.success ? '#2E7D32' : '#C62828' }}>
-                    {result.success ? '✅' : '❌'} {result.test}
-                  </div>
-                  {result.details && (
-                    <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
-                      {result.details}
-                    </div>
-                  )}
-                  <div style={{ fontSize: '0.8em', color: '#999', marginTop: '4px' }}>
-                    {result.timestamp}
-                  </div>
+      <div style={{ marginBottom: '20px' }}>
+        <h2>Test Results:</h2>
+        {tests.map((test, index) => (
+          <div key={index} style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            padding: '10px', 
+            margin: '5px 0', 
+            backgroundColor: '#f5f5f5', 
+            borderRadius: '5px',
+            borderLeft: `4px solid ${getStatusColor(test.status)}`
+          }}>
+            <span style={{ marginRight: '10px', fontSize: '18px' }}>
+              {getStatusIcon(test.status)}
+            </span>
+            <div style={{ flex: 1 }}>
+              <strong>{test.name}</strong>
+              {test.details && (
+                <div style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
+                  {test.details}
                 </div>
-              ))
-            )}
+              )}
+            </div>
           </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: '20px' }}>
+        <h3>Test Map Container:</h3>
+        <div 
+          id="test-map" 
+          style={{ 
+            height: '400px', 
+            width: '100%', 
+            backgroundColor: '#f0f0f0',
+            border: '1px solid #ccc',
+            borderRadius: '5px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '16px',
+            color: '#666'
+          }}
+        >
+          {!import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 
+           import.meta.env.VITE_GOOGLE_MAPS_API_KEY === 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg' || 
+           import.meta.env.VITE_GOOGLE_MAPS_API_KEY === 'AIzaSyBkNaAGLEVq0YYQQFMaX_mOA3mHp-vcaM0' 
+           ? 'Map will appear here once you add a valid Google Maps API key' 
+           : 'Loading map...'}
         </div>
       </div>
 
-      <div style={{ marginTop: '20px', padding: '15px', background: '#e3f2fd', borderRadius: '8px' }}>
-        <h3>Instructions</h3>
-        <ul>
-          <li>If the map loads and you see markers, Google Maps API is working correctly</li>
-          <li>Click on markers to test info windows</li>
-          <li>If you see errors, check the test results panel for details</li>
-          <li>If API key issues are reported, update your .env file with a valid Google Maps API key</li>
-        </ul>
+      <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#e8f5e8', borderRadius: '5px' }}>
+        <h3>🔧 Quick Fix Instructions:</h3>
+        <ol>
+          <li><strong>Get API Key:</strong> Visit <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+          <li><strong>Enable APIs:</strong> Maps JavaScript API, Places API, Directions API, Geocoding API</li>
+          <li><strong>Update .env:</strong> Replace <code>VITE_GOOGLE_MAPS_API_KEY</code> with your real key</li>
+          <li><strong>Restart:</strong> The Vite server will automatically restart when .env changes</li>
+        </ol>
       </div>
     </div>
   );
